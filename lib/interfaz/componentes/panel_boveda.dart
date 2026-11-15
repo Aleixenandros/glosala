@@ -48,7 +48,7 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
         selection: TextSelection.collapsed(offset: c.busqueda.length),
       );
     }
-    return ColoredBox(
+    final panel = ColoredBox(
       color: TemaAplicacion.sidebar(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -401,6 +401,15 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
             ),
           ),
         ],
+      ),
+    );
+    // Mantener accesible la búsqueda al reducirse el espacio por el teclado.
+    return LayoutBuilder(
+      builder: (context, limites) => SingleChildScrollView(
+        child: SizedBox(
+          height: limites.maxHeight < 720 ? 720 : limites.maxHeight,
+          child: panel,
+        ),
       ),
     );
   }

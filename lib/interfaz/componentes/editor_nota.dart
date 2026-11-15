@@ -642,22 +642,6 @@ class EstadoEditorNota extends State<EditorNota> {
     }
   }
 
-  String _fecha(DateTime date) {
-    const months = [
-      'ene',
-      'feb',
-      'mar',
-      'abr',
-      'may',
-      'jun',
-      'jul',
-      'ago',
-      'sep',
-      'oct',
-      'nov',
-      'dic',
-    ];
-    final local = date.toLocal();
-    return '${local.day} ${months[local.month - 1]} ${local.year}';
-  }
+  String _fecha(DateTime fecha) =>
+      MaterialLocalizations.of(context).formatMediumDate(fecha.toLocal());
 }

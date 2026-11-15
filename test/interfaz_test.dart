@@ -91,4 +91,18 @@ void main() {
     expect(find.text('XML translation editor'), findsOneWidget);
     expect(probador.takeException(), isNull);
   });
+
+  testWidgets('La búsqueda móvil sigue accesible con el teclado abierto', (
+    probador,
+  ) async {
+    await preparar(probador, const Size(360, 640));
+    await probador.tap(find.byTooltip('Abrir bóveda'));
+    await probador.pumpAndSettle();
+    probador.view.viewInsets = const FakeViewPadding(bottom: 280);
+    addTearDown(probador.view.resetViewInsets);
+    await probador.pumpAndSettle();
+    await probador.enterText(find.byKey(const Key('sidebar-search')), 'idea');
+    await probador.pumpAndSettle();
+    expect(probador.takeException(), isNull);
+  });
 }
