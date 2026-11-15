@@ -2,7 +2,9 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'aplicacion/controlador_boveda.dart';
 import 'datos/fabrica_repositorio.dart';
@@ -10,8 +12,9 @@ import 'interfaz/tema_aplicacion.dart';
 import 'interfaz/pantalla_espacio.dart';
 import 'idiomas/gestor_idiomas.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) await BrowserContextMenu.disableContextMenu();
   runApp(const InicioGlosala());
 }
 
@@ -41,7 +44,10 @@ class _EstadoInicioGlosala extends State<InicioGlosala> {
       await controller.inicializar();
       for (final codigo in GestorIdiomas.disponibles.keys) {
         final fuente = controller.preferencias['idioma_xml_$codigo'];
-        if (fuente is String) GestorIdiomas.instancia.aplicar(codigo, fuente);
+        if (fuente is String) {
+          final gestor = GestorIdiomas.instancia;
+          gestor.aplicar(codigo, gestor.completarCatalogo(codigo, fuente));
+        }
       }
       final idioma = controller.preferencias['idioma'] as String? ?? 'es';
       GestorIdiomas.instancia.actual =

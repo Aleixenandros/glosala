@@ -188,4 +188,22 @@ Ctrl / Cmd + B: negrita
 Ctrl / Cmd + I: cursiva
 
 Usa [[Título de nota]] para enlazar ideas y #etiquetas para organizarlas. Si la nota no existe, se creará al abrir el enlace. La papelera permite restaurar las notas. En web, el navegador puede reservar algunos atajos.</texto>
+  <texto clave="Exportar a…">Exportar a…</texto>
+  <texto clave="Abrir nota">Abrir nota</texto>
+  <texto clave="Acciones de {titulo}">Acciones de {titulo}</texto>
+  <texto clave="Renombrar carpeta">Renombrar carpeta</texto>
+  <texto clave="Eliminar carpeta">Eliminar carpeta</texto>
+  <texto clave="Se eliminará la carpeta «{carpeta}». Sus notas se conservarán en Mi bóveda, sin carpeta.">Se eliminará la carpeta «{carpeta}». Sus notas se conservarán en Mi bóveda, sin carpeta.</texto>
+  <texto clave="No se ha encontrado la carpeta.">No se ha encontrado la carpeta.</texto>
+  <texto clave="Escribe un nombre para la carpeta.">Escribe un nombre para la carpeta.</texto>
+  <texto clave="Esa carpeta ya existe.">Esa carpeta ya existe.</texto>
+  <texto clave="Haz clic derecho sobre una nota y elige «Exportar a…». En móvil, mantén pulsada la nota o usa su botón de opciones.">Haz clic derecho sobre una nota y elige «Exportar a…». En móvil, mantén pulsada la nota o usa su botón de opciones.</texto>
+  <texto clave="{cantidad} notas enviadas a la papelera.">{cantidad} notas enviadas a la papelera.</texto>
+  <texto clave="{cantidad} notas seleccionadas">{cantidad} notas seleccionadas</texto>
+  <texto clave="{cantidad} seleccionadas">{cantidad} seleccionadas</texto>
+  <texto clave="Seleccionar notas">Seleccionar notas</texto>
+  <texto clave="Seleccionar todas">Seleccionar todas</texto>
+  <texto clave="Cancelar selección">Cancelar selección</texto>
+  <texto clave="Acciones de la selección">Acciones de la selección</texto>
+  <texto clave="Seleccionar {titulo}">Seleccionar {titulo}</texto>
 </idioma>

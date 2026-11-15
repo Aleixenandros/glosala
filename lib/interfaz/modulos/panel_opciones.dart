@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../../aplicacion/controlador_boveda.dart';
 import '../../idiomas/gestor_idiomas.dart';
+import 'panel_plugins.dart';
 
 class PanelOpciones extends StatefulWidget {
   const PanelOpciones({super.key, required this.controlador});
@@ -35,9 +36,11 @@ class _EstadoPanelOpciones extends State<PanelOpciones> {
   }
 
   void _cargarCatalogo() {
-    _xml.text =
-        widget.controlador.preferencias['idioma_xml_$_catalogo'] as String? ??
-        GestorIdiomas.instancia.original(_catalogo);
+    final guardado = widget.controlador.preferencias['idioma_xml_$_catalogo'];
+    final gestor = GestorIdiomas.instancia;
+    _xml.text = guardado is String
+        ? gestor.completarCatalogo(_catalogo, guardado)
+        : gestor.original(_catalogo);
     _modificado = false;
   }
 
@@ -195,6 +198,10 @@ class _EstadoPanelOpciones extends State<PanelOpciones> {
               ),
           ],
         ),
+        const SizedBox(height: 28),
+        const Divider(),
+        const SizedBox(height: 25),
+        PanelPlugins(controlador: c),
         const SizedBox(height: 28),
         const Divider(),
         const SizedBox(height: 25),

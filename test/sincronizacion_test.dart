@@ -22,6 +22,55 @@ Nota nota(String contenido) => Nota(
 
 void main() {
   test(
+    'El renombrado y borrado de carpetas se propagan sin perder notas',
+    () async {
+      final carpeta = await Directory.systemTemp.createTemp(
+        'glosala-carpetas-',
+      );
+      final a = ControladorBoveda(
+        RepositorioMemoria()
+          ..guardada = Boveda(
+            notas: [nota('Conservar').copiar(carpeta: 'Origen')],
+            carpetas: ['Origen', 'Vacía'],
+          ),
+      );
+      final b = ControladorBoveda(
+        RepositorioMemoria()..guardada = const Boveda(notas: []),
+      );
+      await a.inicializar();
+      await b.inicializar();
+      addTearDown(() async {
+        await a.guardarPendientes();
+        await b.guardarPendientes();
+        a.dispose();
+        b.dispose();
+        await carpeta.delete(recursive: true);
+      });
+      final servicio = ServicioSincronizacion();
+      Future<int> sincronizar(ControladorBoveda controlador) =>
+          servicio.sincronizar(
+            controlador,
+            TransporteCarpeta(carpeta.path),
+            'carpetas',
+          );
+      await sincronizar(a);
+      await sincronizar(b);
+      a.renombrarCarpeta('Origen', 'Renombrada');
+      a.eliminarCarpeta('Vacía');
+      await sincronizar(a);
+      await sincronizar(b);
+      expect(b.carpetas, ['Renombrada']);
+      expect(b.notas.single.carpeta, 'Renombrada');
+      b.eliminarCarpeta('Renombrada');
+      await sincronizar(b);
+      await sincronizar(a);
+      expect(a.carpetas, isEmpty);
+      expect(a.notas.single.carpeta, '');
+      expect(a.notas.single.contenido, 'Conservar');
+    },
+  );
+
+  test(
     'La mezcla propaga cambios remotos sin perder ediciones concurrentes',
     () {
       final base = nota('base');

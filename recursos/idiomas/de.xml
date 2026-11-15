@@ -188,4 +188,22 @@ Strg / Cmd + B: fett
 Strg / Cmd + I: kursiv
 
 Nutze [[Notiztitel]] zum Verknüpfen und #Schlagwörter zum Ordnen. Fehlende Notizen werden beim Öffnen des Links erstellt. Notizen im Papierkorb lassen sich wiederherstellen. Browser können Tastenkürzel reservieren.</texto>
+  <texto clave="Exportar a…">Exportieren als…</texto>
+  <texto clave="Abrir nota">Notiz öffnen</texto>
+  <texto clave="Acciones de {titulo}">Aktionen für {titulo}</texto>
+  <texto clave="Renombrar carpeta">Ordner umbenennen</texto>
+  <texto clave="Eliminar carpeta">Ordner löschen</texto>
+  <texto clave="Se eliminará la carpeta «{carpeta}». Sus notas se conservarán en Mi bóveda, sin carpeta.">Der Ordner „{carpeta}“ wird gelöscht. Seine Notizen bleiben in Mein Tresor ohne Ordner erhalten.</texto>
+  <texto clave="No se ha encontrado la carpeta.">Der Ordner wurde nicht gefunden.</texto>
+  <texto clave="Escribe un nombre para la carpeta.">Gib einen Ordnernamen ein.</texto>
+  <texto clave="Esa carpeta ya existe.">Dieser Ordner existiert bereits.</texto>
+  <texto clave="Haz clic derecho sobre una nota y elige «Exportar a…». En móvil, mantén pulsada la nota o usa su botón de opciones.">Klicke mit der rechten Maustaste auf eine Notiz und wähle „Exportieren als…“. Halte auf Mobilgeräten die Notiz gedrückt oder verwende ihre Optionsschaltfläche.</texto>
+  <texto clave="{cantidad} notas enviadas a la papelera.">{cantidad} Notizen in den Papierkorb verschoben.</texto>
+  <texto clave="{cantidad} notas seleccionadas">{cantidad} Notizen ausgewählt</texto>
+  <texto clave="{cantidad} seleccionadas">{cantidad} ausgewählt</texto>
+  <texto clave="Seleccionar notas">Notizen auswählen</texto>
+  <texto clave="Seleccionar todas">Alle auswählen</texto>
+  <texto clave="Cancelar selección">Auswahl aufheben</texto>
+  <texto clave="Acciones de la selección">Aktionen für die Auswahl</texto>
+  <texto clave="Seleccionar {titulo}">{titulo} auswählen</texto>
 </idioma>

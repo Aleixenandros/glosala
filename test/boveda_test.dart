@@ -130,4 +130,80 @@ void main() {
       isTrue,
     );
   });
+
+  test(
+    'Renombrar y eliminar carpetas conserva notas y papelera al reabrir',
+    () async {
+      controlador.anadirCarpeta('Borradores');
+      final activa = controlador.crearNota(
+        enCarpeta: 'Borradores',
+        contenido: 'Conservar',
+      );
+      final eliminada = controlador.crearNota(enCarpeta: 'Borradores');
+      controlador.enviarPapelera(eliminada.id);
+      controlador.anadirCarpeta('Archivo');
+      controlador.cambiarFiltro(FiltroNotas.todas, enCarpeta: 'Borradores');
+      expect(controlador.renombrarCarpeta('Borradores', ' '), isNotNull);
+      expect(controlador.renombrarCarpeta('Borradores', 'archivo'), isNotNull);
+      expect(controlador.renombrarCarpeta('Borradores', 'Revisados'), isNull);
+      expect(controlador.carpeta, 'Revisados');
+      expect(controlador.notaPorId(eliminada.id)!.carpeta, 'Revisados');
+      controlador.eliminarCarpeta('Revisados');
+      await controlador.guardarPendientes();
+      final reabierto = ControladorBoveda(repositorio);
+      await reabierto.inicializar();
+      expect(reabierto.carpetas, isNot(contains('Revisados')));
+      expect(reabierto.carpetas, isNot(contains('Borradores')));
+      expect(reabierto.notaPorId(activa.id)!.carpeta, '');
+      expect(reabierto.notaPorId(activa.id)!.contenido, 'Conservar');
+      expect(reabierto.notaPorId(eliminada.id)!.eliminada, isTrue);
+      expect(controlador.carpeta, isNull);
+      reabierto.dispose();
+    },
+  );
+
+  test('La selección por rango y todos solo incluye las notas visibles', () {
+    controlador.crearNota(titulo: 'Selección A', enCarpeta: 'Grupo');
+    controlador.crearNota(titulo: 'Selección B', enCarpeta: 'Grupo');
+    controlador.crearNota(titulo: 'Selección C', enCarpeta: 'Grupo');
+    controlador.cambiarFiltro(FiltroNotas.todas, enCarpeta: 'Grupo');
+    final visibles = controlador.notasVisibles;
+    controlador.marcarNota(visibles.first.id);
+    controlador.marcarNota(visibles.last.id, rango: true, acumular: false);
+    expect(controlador.notasMarcadas, hasLength(3));
+    controlador.marcarNota(visibles[1].id);
+    expect(controlador.notasMarcadas, hasLength(2));
+    controlador.cambiarBusqueda('Selección B');
+    expect(controlador.notasMarcadas, isEmpty);
+    controlador.marcarTodasVisibles();
+    expect(controlador.notasMarcadas.single.titulo, 'Selección B');
+    controlador.cambiarFiltro(FiltroNotas.papelera);
+    expect(controlador.notasMarcadas, isEmpty);
+  });
+
+  test(
+    'Acciones por lote y restauración afectan solo a sus identificadores',
+    () async {
+      final primera = controlador.crearNota(titulo: 'Lote A', contenido: 'Uno');
+      final segunda = controlador.crearNota(titulo: 'Lote B', contenido: 'Dos');
+      final tercera = controlador.crearNota(titulo: 'Fuera del lote');
+      final ids = [primera.id, segunda.id];
+      controlador.moverNotas(ids, 'Destino');
+      controlador.marcarFavoritas(ids, true);
+      controlador.enviarNotasPapelera(ids);
+      controlador.crearNota(titulo: 'Lote A');
+      controlador.restaurarNotas(ids);
+      await controlador.guardarPendientes();
+      final guardadas = repositorio.guardada!.notas;
+      for (final id in ids) {
+        final nota = guardadas.firstWhere((nota) => nota.id == id);
+        expect(nota.favorita, isTrue);
+        expect(nota.carpeta, 'Destino');
+        expect(nota.eliminada, isFalse);
+      }
+      expect(controlador.notaPorId(primera.id)!.titulo, 'Lote A (2)');
+      expect(controlador.notaPorId(tercera.id)!.carpeta, '');
+      expect(controlador.notaPorId(tercera.id)!.favorita, isFalse);
+    },
+  );
 }

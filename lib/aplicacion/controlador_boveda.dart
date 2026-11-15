@@ -22,10 +22,14 @@ class ControladorBoveda extends ChangeNotifier {
   final List<Nota> _notas = [];
   final List<String> _carpetas = [];
   final List<String> _idsAbiertas = [];
+  final Set<String> _idsMarcadas = {};
+  String? _idAnclaSeleccion;
   final List<Tarea> _tareas = [];
   final Map<String, dynamic> _preferencias = {};
   List<Tarea> get tareas => List.unmodifiable(_tareas);
   Map<String, dynamic> get preferencias => Map.unmodifiable(_preferencias);
+  bool get exportacionHabilitada =>
+      _preferencias['plugin_exportacion'] as bool? ?? true;
 
   void configurar(String clave, dynamic valor) {
     _preferencias[clave] = valor;
@@ -104,10 +108,10 @@ class ControladorBoveda extends ChangeNotifier {
     _notas
       ..clear()
       ..addAll(notas);
-    final todas = {..._carpetas, ...carpetas};
     _carpetas
       ..clear()
-      ..addAll(todas);
+      ..addAll(carpetas);
+    if (carpeta != null && !this.carpetas.contains(carpeta)) carpeta = null;
     _cambio();
   }
 
@@ -140,6 +144,38 @@ class ControladorBoveda extends ChangeNotifier {
   Nota? get notaSeleccionada => notaPorId(_idSeleccionada);
   List<Nota> get notasAbiertas =>
       _idsAbiertas.map(notaPorId).whereType<Nota>().toList();
+  List<Nota> get notasMarcadas =>
+      notasVisibles.where((nota) => _idsMarcadas.contains(nota.id)).toList();
+
+  void marcarNota(String id, {bool rango = false, bool acumular = true}) {
+    final visibles = notasVisibles.map((nota) => nota.id).toList();
+    final indice = visibles.indexOf(id);
+    if (indice < 0) return;
+    final ancla = visibles.indexOf(_idAnclaSeleccion ?? _idSeleccionada ?? id);
+    if (rango && ancla >= 0) {
+      if (!acumular) _idsMarcadas.clear();
+      final inicio = indice < ancla ? indice : ancla;
+      final fin = indice > ancla ? indice : ancla;
+      _idsMarcadas.addAll(visibles.sublist(inicio, fin + 1));
+    } else {
+      if (!_idsMarcadas.remove(id)) _idsMarcadas.add(id);
+      _idAnclaSeleccion = id;
+    }
+    _notificar();
+  }
+
+  void marcarTodasVisibles() {
+    _idsMarcadas
+      ..clear()
+      ..addAll(notasVisibles.map((nota) => nota.id));
+    _notificar();
+  }
+
+  void limpiarSeleccion() {
+    _idsMarcadas.clear();
+    _idAnclaSeleccion = null;
+    _notificar();
+  }
 
   Nota? notaPorId(String? id) {
     for (final nota in _notas) {
@@ -225,7 +261,7 @@ class ControladorBoveda extends ChangeNotifier {
 
   void cambiarBusqueda(String value) {
     busqueda = value;
-    _notificar();
+    limpiarSeleccion();
   }
 
   void cambiarFiltro(
@@ -237,7 +273,7 @@ class ControladorBoveda extends ChangeNotifier {
     carpeta = enCarpeta;
     tag = conEtiqueta;
     mapaVisible = false;
-    _notificar();
+    limpiarSeleccion();
   }
 
   void mostrarMapa(bool value) {
@@ -303,6 +339,8 @@ class ControladorBoveda extends ChangeNotifier {
     busqueda = '';
     mapaVisible = false;
     modoEditor = ModoEditor.editar;
+    _idsMarcadas.clear();
+    _idAnclaSeleccion = null;
     _cambio();
     return nota;
   }
@@ -371,46 +409,122 @@ class ControladorBoveda extends ChangeNotifier {
   }
 
   void moverNota(String id, String destino) {
-    final nota = notaPorId(id);
-    if (nota == null) return;
-    _reemplazar(nota.copiar(carpeta: destino, modificadaEl: DateTime.now()));
+    moverNotas([id], destino);
+  }
+
+  void moverNotas(Iterable<String> ids, String destino) {
+    final seleccion = ids.toSet();
+    final ahora = DateTime.now();
+    for (var i = 0; i < _notas.length; i++) {
+      if (seleccion.contains(_notas[i].id) && !_notas[i].eliminada) {
+        _notas[i] = _notas[i].copiar(carpeta: destino, modificadaEl: ahora);
+      }
+    }
     _cambio();
+  }
+
+  String? renombrarCarpeta(String origen, String nombre) {
+    final destino = nombre.trim();
+    if (!carpetas.contains(origen)) return 'No se ha encontrado la carpeta.';
+    if (destino.isEmpty) return 'Escribe un nombre para la carpeta.';
+    if (carpetas.any(
+      (actual) =>
+          actual != origen && actual.toLowerCase() == destino.toLowerCase(),
+    )) {
+      return 'Esa carpeta ya existe.';
+    }
+    if (origen == destino) return null;
+    _carpetas.remove(origen);
+    _carpetas.add(destino);
+    _trasladarContenidoCarpeta(origen, destino);
+    if (carpeta == origen) carpeta = destino;
+    _cambio();
+    return null;
+  }
+
+  /// Elimina la agrupación y conserva todas las notas, incluidas las eliminadas.
+  void eliminarCarpeta(String nombre) {
+    if (!carpetas.contains(nombre)) return;
+    _carpetas.remove(nombre);
+    _trasladarContenidoCarpeta(nombre, '');
+    if (carpeta == nombre) carpeta = null;
+    _cambio();
+  }
+
+  void _trasladarContenidoCarpeta(String origen, String destino) {
+    final ahora = DateTime.now();
+    for (var i = 0; i < _notas.length; i++) {
+      if (_notas[i].carpeta == origen) {
+        _notas[i] = _notas[i].copiar(carpeta: destino, modificadaEl: ahora);
+      }
+    }
   }
 
   void alternarFavorita(String id) {
     final nota = notaPorId(id);
     if (nota == null) return;
-    _reemplazar(nota.copiar(favorita: !nota.favorita));
+    marcarFavoritas([id], !nota.favorita);
+  }
+
+  void marcarFavoritas(Iterable<String> ids, bool favorita) {
+    final seleccion = ids.toSet();
+    final ahora = DateTime.now();
+    for (var i = 0; i < _notas.length; i++) {
+      if (seleccion.contains(_notas[i].id) && !_notas[i].eliminada) {
+        _notas[i] = _notas[i].copiar(favorita: favorita, modificadaEl: ahora);
+      }
+    }
     _cambio();
   }
 
   void enviarPapelera(String id) {
-    final nota = notaPorId(id);
-    if (nota == null) return;
-    _reemplazar(nota.copiar(eliminada: true, modificadaEl: DateTime.now()));
-    _idsAbiertas.remove(id);
-    if (_idSeleccionada == id) _idSeleccionada = _idsAbiertas.lastOrNull;
+    enviarNotasPapelera([id]);
+  }
+
+  void enviarNotasPapelera(Iterable<String> ids) {
+    final seleccion = ids.toSet();
+    final ahora = DateTime.now();
+    for (var i = 0; i < _notas.length; i++) {
+      if (seleccion.contains(_notas[i].id)) {
+        _notas[i] = _notas[i].copiar(eliminada: true, modificadaEl: ahora);
+      }
+    }
+    _idsAbiertas.removeWhere(seleccion.contains);
+    _idsMarcadas.removeAll(seleccion);
+    if (seleccion.contains(_idSeleccionada)) {
+      _idSeleccionada = _idsAbiertas.lastOrNull;
+    }
     _cambio();
   }
 
   void restaurarNota(String id) {
-    final nota = notaPorId(id);
-    if (nota == null) return;
-    _reemplazar(
-      nota.copiar(
-        titulo: _tituloUnico(nota.titulo),
-        eliminada: false,
-        modificadaEl: DateTime.now(),
-      ),
-    );
+    restaurarNotas([id]);
+  }
+
+  void restaurarNotas(Iterable<String> ids) {
+    String? ultima;
+    for (final id in ids.toSet()) {
+      final nota = notaPorId(id);
+      if (nota == null || !nota.eliminada) continue;
+      _reemplazar(
+        nota.copiar(
+          titulo: _tituloUnico(nota.titulo),
+          eliminada: false,
+          modificadaEl: DateTime.now(),
+        ),
+      );
+      ultima = id;
+    }
+    if (ultima == null) return;
     cambiarFiltro(FiltroNotas.todas);
-    seleccionarNota(id);
+    seleccionarNota(ultima);
   }
 
   void _reemplazar(Nota nota) =>
       _notas[_notas.indexWhere((n) => n.id == nota.id)] = nota;
 
   void _cambio() {
+    _idsMarcadas.retainAll(notasVisibles.map((nota) => nota.id));
     _revision++;
     _notificar();
     // Las escrituras serializadas agrupan los cambios recibidos durante un guardado.

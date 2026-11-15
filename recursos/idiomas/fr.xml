@@ -188,4 +188,22 @@ Ctrl / Cmd + B : gras
 Ctrl / Cmd + I : italique
 
 Utilisez [[Titre de note]] pour relier les idées et des #étiquettes pour les organiser. Les notes manquantes sont créées à l’ouverture du lien. La corbeille permet de restaurer les notes. Le navigateur peut réserver certains raccourcis.</texto>
+  <texto clave="Exportar a…">Exporter en…</texto>
+  <texto clave="Abrir nota">Ouvrir la note</texto>
+  <texto clave="Acciones de {titulo}">Actions pour {titulo}</texto>
+  <texto clave="Renombrar carpeta">Renommer le dossier</texto>
+  <texto clave="Eliminar carpeta">Supprimer le dossier</texto>
+  <texto clave="Se eliminará la carpeta «{carpeta}». Sus notas se conservarán en Mi bóveda, sin carpeta.">Le dossier « {carpeta} » sera supprimé. Ses notes seront conservées dans Mon coffre, sans dossier.</texto>
+  <texto clave="No se ha encontrado la carpeta.">Le dossier est introuvable.</texto>
+  <texto clave="Escribe un nombre para la carpeta.">Saisissez un nom de dossier.</texto>
+  <texto clave="Esa carpeta ya existe.">Ce dossier existe déjà.</texto>
+  <texto clave="Haz clic derecho sobre una nota y elige «Exportar a…». En móvil, mantén pulsada la nota o usa su botón de opciones.">Faites un clic droit sur une note et choisissez « Exporter en… ». Sur mobile, maintenez la note appuyée ou utilisez son bouton d’options.</texto>
+  <texto clave="{cantidad} notas enviadas a la papelera.">{cantidad} notes déplacées dans la corbeille.</texto>
+  <texto clave="{cantidad} notas seleccionadas">{cantidad} notes sélectionnées</texto>
+  <texto clave="{cantidad} seleccionadas">{cantidad} sélectionnées</texto>
+  <texto clave="Seleccionar notas">Sélectionner des notes</texto>
+  <texto clave="Seleccionar todas">Tout sélectionner</texto>
+  <texto clave="Cancelar selección">Annuler la sélection</texto>
+  <texto clave="Acciones de la selección">Actions sur la sélection</texto>
+  <texto clave="Seleccionar {titulo}">Sélectionner {titulo}</texto>
 </idioma>

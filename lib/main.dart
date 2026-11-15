@@ -1,3 +1,3 @@
 import 'aplicacion_glosala.dart' as glosala;
 
-void main() => glosala.main();
+Future<void> main() => glosala.main();

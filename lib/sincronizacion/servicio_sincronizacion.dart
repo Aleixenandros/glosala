@@ -67,6 +67,21 @@ ResultadoMezcla mezclarNotas(
 class ServicioSincronizacion {
   bool _ocupado = false;
 
+  /// Una carpeta previamente compartida desaparece si se elimina en un lado.
+  /// Las notas conservadas o en conflicto vuelven a aportar su carpeta.
+  List<String> _mezclarCarpetas(
+    List<String> locales,
+    List<String> remotas,
+    List<String> base,
+    List<Nota> notas,
+  ) => {
+    for (final carpeta in {...locales, ...remotas})
+      if (!base.contains(carpeta) ||
+          (locales.contains(carpeta) && remotas.contains(carpeta)))
+        carpeta,
+    ...notas.map((nota) => nota.carpeta).where((carpeta) => carpeta.isNotEmpty),
+  }.toList()..sort();
+
   Future<int> sincronizar(
     ControladorBoveda controlador,
     TransporteSincronizacion transporte,
@@ -89,8 +104,18 @@ class ServicioSincronizacion {
         controlador.preferencias[clave] as Map? ?? {},
       );
       final anteriores = controlador.notas;
+      final carpetasAnteriores = controlador.carpetas;
+      final claveCarpetas = 'carpetas_$clave';
+      final baseCarpetas = List<String>.from(
+        controlador.preferencias[claveCarpetas] as List? ?? [],
+      );
       final mezcla = mezclarNotas(anteriores, remoto.notas, base);
-      final carpetas = {...controlador.carpetas, ...remoto.carpetas}.toList();
+      final carpetas = _mezclarCarpetas(
+        carpetasAnteriores,
+        remoto.carpetas,
+        baseCarpetas,
+        mezcla.notas,
+      );
       final compartida = Boveda(notas: mezcla.notas, carpetas: carpetas);
       // Escribir remotamente antes de aplicar; un 412 no modifica la bóveda local.
       await transporte.escribir(
@@ -101,7 +126,14 @@ class ServicioSincronizacion {
       final posteriores = mezclarNotas(controlador.notas, mezcla.notas, {
         for (final nota in anteriores) nota.id: huellaNota(nota),
       });
-      controlador.aplicarSincronizacion(posteriores.notas, carpetas);
+      final carpetasPosteriores = _mezclarCarpetas(
+        controlador.carpetas,
+        carpetas,
+        carpetasAnteriores,
+        posteriores.notas,
+      );
+      controlador.aplicarSincronizacion(posteriores.notas, carpetasPosteriores);
+      controlador.configurar(claveCarpetas, carpetas);
       controlador.configurar(clave, {
         for (final nota in mezcla.notas) nota.id: huellaNota(nota),
       });

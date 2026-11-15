@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../aplicacion/controlador_boveda.dart';
 import '../../dominio/nota.dart';
+import 'menu_contextual.dart';
 
 class EditorNota extends StatefulWidget {
   const EditorNota({
@@ -16,16 +17,12 @@ class EditorNota extends StatefulWidget {
     required this.nota,
     required this.controller,
     required this.alRenombrar,
-    required this.alExportar,
-    required this.alMover,
-    required this.alEnviarPapelera,
+    required this.acciones,
   });
   final Nota nota;
   final ControladorBoveda controller;
   final VoidCallback alRenombrar;
-  final VoidCallback alExportar;
-  final VoidCallback alMover;
-  final VoidCallback alEnviarPapelera;
+  final List<Widget> acciones;
 
   @override
   State<EditorNota> createState() => EstadoEditorNota();
@@ -189,42 +186,9 @@ class EstadoEditorNota extends State<EditorNota> {
                     ),
                   ],
                   SizedBox(width: 5),
-                  PopupMenuButton<String>(
-                    tooltip: t('Opciones de la nota'),
-                    icon: Icon(Icons.more_horiz, size: 20),
-                    onSelected: (value) {
-                      switch (value) {
-                        case 'rename':
-                          widget.alRenombrar();
-                        case 'move':
-                          widget.alMover();
-                        case 'export':
-                          widget.alExportar();
-                        case 'trash':
-                          widget.alEnviarPapelera();
-                      }
-                    },
-                    itemBuilder: (_) => [
-                      if (!nota.eliminada)
-                        PopupMenuItem(
-                          value: 'rename',
-                          child: Text(t('Renombrar')),
-                        ),
-                      if (!nota.eliminada)
-                        PopupMenuItem(
-                          value: 'move',
-                          child: Text(t('Mover a carpeta')),
-                        ),
-                      PopupMenuItem(
-                        value: 'export',
-                        child: Text(t('Exportar notas')),
-                      ),
-                      if (!nota.eliminada)
-                        PopupMenuItem(
-                          value: 'trash',
-                          child: Text(t('Mover a la papelera')),
-                        ),
-                    ],
+                  MenuContextual(
+                    descripcion: t('Opciones de la nota'),
+                    acciones: widget.acciones,
                   ),
                 ],
               ),

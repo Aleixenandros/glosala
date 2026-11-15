@@ -26,7 +26,11 @@ class GestorIdiomas {
     }
   }
 
-  Map<String, String> validar(String fuente, String codigo) {
+  Map<String, String> validar(
+    String fuente,
+    String codigo, {
+    bool exigirTodasLasClaves = true,
+  }) {
     if (fuente.contains('<!DOCTYPE') || fuente.contains('<!ENTITY')) {
       throw const FormatException('No se permiten entidades XML.');
     }
@@ -60,7 +64,8 @@ class GestorIdiomas {
       resultado[clave] = elemento.innerText;
     }
     final base = _catalogos['es'];
-    if (base != null &&
+    if (exigirTodasLasClaves &&
+        base != null &&
         (base.keys.toSet().difference(resultado.keys.toSet()).isNotEmpty ||
             resultado.keys.toSet().difference(base.keys.toSet()).isNotEmpty)) {
       throw const FormatException(
@@ -72,6 +77,18 @@ class GestorIdiomas {
 
   void aplicar(String codigo, String fuente) {
     _catalogos[codigo] = validar(fuente, codigo);
+  }
+
+  /// Conserva las traducciones personales al añadir claves en una actualización.
+  /// La edición y la importación siguen exigiendo un catálogo completo.
+  String completarCatalogo(String codigo, String fuente) {
+    final personalizadas = validar(fuente, codigo, exigirTodasLasClaves: false);
+    final documento = XmlDocument.parse(original(codigo));
+    for (final elemento in documento.rootElement.childElements) {
+      final valor = personalizadas[elemento.getAttribute('clave')];
+      if (valor != null) elemento.innerText = valor;
+    }
+    return documento.toXmlString(pretty: true, indent: '  ');
   }
 
   String original(String codigo) => _originales[codigo]!;

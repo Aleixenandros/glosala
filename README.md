@@ -23,7 +23,9 @@ Para Android, conecta un dispositivo o inicia un emulador y ejecuta `flutter run
 - **Idiomas:** español, inglés, francés, alemán y portugués. Selector en Opciones y editor XML con validación, importación y exportación. El contenido de las notas conserva su idioma original.
 - **Apariencia:** claro, oscuro o sistema; temas Amatista, Bosque, Océano y Ámbar.
 - **Sincronización:** manual, mediante WebDAV o una carpeta de escritorio/NAS montada. Comparación de versiones y copias de conflicto, sin descartar silenciosamente contenido.
-- **Plugins:** zona de activación y configuración. El primer plugin exporta una o todas las notas a Markdown, ZIP, HTML, PDF y ODS.
+- **Menús contextuales:** botón derecho, pulsación larga o botón de opciones en cada nota y carpeta. Las carpetas se pueden renombrar o eliminar conservando sus notas en la raíz.
+- **Selección múltiple:** Ctrl/Cmd + clic, Mayús + clic para rangos o casillas. Permite mover, marcar favoritas, enviar a la papelera, restaurar y exportar las notas seleccionadas. «Seleccionar todas» respeta la búsqueda y la carpeta visibles.
+- **Plugins:** activación en **Opciones → Plugins**. Al habilitar Exportación de notas, el menú de cada nota o selección ofrece **Exportar a… → Markdown, HTML, PDF u ODS**. Varias notas en Markdown se reúnen en un ZIP.
 - **Acerca de:** versión, repositorio, licencias y comprobación de actualizaciones en GitHub Releases.
 
 ## Persistencia
@@ -32,7 +34,7 @@ En Android, iOS y escritorio, cada nota es un `.md` con cabecera YAML dentro del
 
 En web se utiliza **IndexedDB**. Los datos pertenecen al navegador y al origen de la aplicación; borrar los datos del sitio también elimina la bóveda. Usa exportación o sincronización para conservar otra copia. No hay cuentas ni servicio central de almacenamiento.
 
-Las traducciones originales están en `recursos/idiomas/*.xml`. Las modificaciones hechas desde Opciones se guardan como preferencias locales y se pueden exportar como XML. No se modifica el catálogo instalado dentro del ejecutable.
+Las traducciones originales están en `recursos/idiomas/*.xml`. Las modificaciones hechas desde Opciones se guardan como preferencias locales y se pueden exportar como XML. No se modifica el catálogo instalado dentro del ejecutable. Al actualizar la aplicación se añaden las nuevas claves conservando las traducciones personales.
 
 ## Sincronización
 

@@ -3,6 +3,9 @@ import '../../idiomas/gestor_idiomas.dart';
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'menu_contextual.dart';
 
 import '../../aplicacion/controlador_boveda.dart';
 import '../../dominio/nota.dart';
@@ -17,6 +20,8 @@ class PanelBoveda extends StatefulWidget {
     required this.alImportar,
     required this.alSeleccionar,
     required this.alAbrirOpciones,
+    required this.accionesNotas,
+    required this.accionesCarpeta,
   });
   final ControladorBoveda controller;
   final VoidCallback alCrear;
@@ -24,6 +29,8 @@ class PanelBoveda extends StatefulWidget {
   final VoidCallback alImportar;
   final VoidCallback alAbrirOpciones;
   final ValueChanged<Nota> alSeleccionar;
+  final List<Widget> Function(List<Nota>) accionesNotas;
+  final List<Widget> Function(String) accionesCarpeta;
 
   @override
   State<PanelBoveda> createState() => _EstadoPanelBoveda();
@@ -31,6 +38,7 @@ class PanelBoveda extends StatefulWidget {
 
 class _EstadoPanelBoveda extends State<PanelBoveda> {
   final _buscador = TextEditingController();
+  bool _modoSeleccion = false;
 
   @override
   void dispose() {
@@ -42,6 +50,8 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
   Widget build(BuildContext context) {
     final c = widget.controller;
     final theme = Theme.of(context);
+    final marcadas = c.notasMarcadas;
+    final seleccionando = _modoSeleccion || marcadas.isNotEmpty;
     if (_buscador.text != c.busqueda) {
       _buscador.value = TextEditingValue(
         text: c.busqueda,
@@ -183,16 +193,24 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
                     ),
                   ),
                   for (final carpeta in c.carpetas)
-                    _navegacion(
-                      context,
-                      Icons.folder_outlined,
-                      carpeta,
-                      c.carpeta == carpeta,
-                      () => c.cambiarFiltro(
-                        FiltroNotas.todas,
-                        enCarpeta: carpeta,
+                    MenuContextual(
+                      key: ValueKey('carpeta-$carpeta'),
+                      descripcion: t('Acciones de {titulo}', {
+                        'titulo': carpeta,
+                      }),
+                      acciones: widget.accionesCarpeta(carpeta),
+                      construir: (boton) => _navegacion(
+                        context,
+                        Icons.folder_outlined,
+                        carpeta,
+                        c.carpeta == carpeta,
+                        () => c.cambiarFiltro(
+                          FiltroNotas.todas,
+                          enCarpeta: carpeta,
+                        ),
+                        compacto: true,
+                        adicional: boton,
                       ),
-                      compacto: true,
                     ),
                 ],
               ),
@@ -201,28 +219,63 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
           SizedBox(height: 12),
           Divider(),
           Padding(
-            padding: EdgeInsets.fromLTRB(22, 16, 16, 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                Expanded(
-                  child: Text(
-                    c.busqueda.isNotEmpty
-                        ? t('RESULTADOS')
-                        : c.tag != null
-                        ? '#${c.tag}'
-                        : t('NOTAS'),
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.4,
-                      color: Color(0xFF8D899A),
+                if (seleccionando) ...[
+                  IconButton(
+                    tooltip: t('Seleccionar todas'),
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.select_all, size: 18),
+                    onPressed: c.marcarTodasVisibles,
+                  ),
+                  Expanded(
+                    child: Text(
+                      t('{cantidad} seleccionadas', {
+                        'cantidad': marcadas.length,
+                      }),
+                      style: const TextStyle(fontSize: 11),
                     ),
                   ),
-                ),
-                Text(
-                  '${c.notasVisibles.length}',
-                  style: TextStyle(fontSize: 11, color: Color(0xFF8D899A)),
+                  if (marcadas.isNotEmpty)
+                    MenuContextual(
+                      descripcion: t('Acciones de la selección'),
+                      acciones: widget.accionesNotas(marcadas),
+                    ),
+                ] else ...[
+                  Expanded(
+                    child: Text(
+                      c.busqueda.isNotEmpty
+                          ? t('RESULTADOS')
+                          : c.tag != null
+                          ? '#${c.tag}'
+                          : t('NOTAS'),
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.4,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${c.notasVisibles.length}',
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+                IconButton(
+                  tooltip: t(
+                    seleccionando ? 'Cancelar selección' : 'Seleccionar notas',
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(
+                    seleccionando ? Icons.close : Icons.checklist,
+                    size: 18,
+                  ),
+                  onPressed: () {
+                    setState(() => _modoSeleccion = !seleccionando);
+                    if (seleccionando) c.limpiarSeleccion();
+                  },
                 ),
               ],
             ),
@@ -252,82 +305,129 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
                       final nota = c.notasVisibles[index];
                       final selected =
                           c.notaSeleccionada?.id == nota.id && !c.mapaVisible;
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: 5),
-                        child: Material(
-                          color: selected
-                              ? theme.colorScheme.primary.withValues(alpha: .12)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
-                          child: InkWell(
+                      final marcada = marcadas.any(
+                        (actual) => actual.id == nota.id,
+                      );
+                      return MenuContextual(
+                        key: ValueKey('nota-${nota.id}'),
+                        descripcion: t('Acciones de {titulo}', {
+                          'titulo': nota.titulo,
+                        }),
+                        acciones: widget.accionesNotas(
+                          marcada ? marcadas : [nota],
+                        ),
+                        construir: (boton) => Padding(
+                          padding: EdgeInsets.only(bottom: 5),
+                          child: Material(
+                            color: (selected || marcada)
+                                ? theme.colorScheme.primary.withValues(
+                                    alpha: .12,
+                                  )
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
-                            onTap: () => widget.alSeleccionar(nota),
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 13,
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: EdgeInsets.only(top: 2),
-                                    child: Icon(
-                                      Icons.description_outlined,
-                                      size: 16,
-                                      color: selected
-                                          ? theme.colorScheme.primary
-                                          : null,
-                                    ),
-                                  ),
-                                  SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          nota.titulo,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: selected
-                                                ? FontWeight.w600
-                                                : FontWeight.w400,
-                                            color: selected
-                                                ? theme.colorScheme.primary
-                                                : null,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: () {
+                                final teclado = HardwareKeyboard.instance;
+                                if (seleccionando ||
+                                    teclado.isControlPressed ||
+                                    teclado.isMetaPressed ||
+                                    teclado.isShiftPressed) {
+                                  c.marcarNota(
+                                    nota.id,
+                                    rango: teclado.isShiftPressed,
+                                    acumular:
+                                        !teclado.isShiftPressed ||
+                                        teclado.isControlPressed ||
+                                        teclado.isMetaPressed,
+                                  );
+                                } else {
+                                  widget.alSeleccionar(nota);
+                                }
+                              },
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 10,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (seleccionando)
+                                      SizedBox(
+                                        width: 28,
+                                        height: 28,
+                                        child: Checkbox(
+                                          value: marcada,
+                                          semanticLabel: t(
+                                            'Seleccionar {titulo}',
+                                            {'titulo': nota.titulo},
                                           ),
+                                          onChanged: (_) =>
+                                              c.marcarNota(nota.id),
                                         ),
-                                        SizedBox(height: 5),
-                                        Text(
-                                          nota.extracto.isEmpty
-                                              ? t('Una página en blanco')
-                                              : nota.extracto,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: theme
-                                                .colorScheme
-                                                .onSurfaceVariant
-                                                .withValues(alpha: .6),
+                                      )
+                                    else
+                                      Padding(
+                                        padding: EdgeInsets.only(top: 2),
+                                        child: Icon(
+                                          Icons.description_outlined,
+                                          size: 16,
+                                          color: selected
+                                              ? theme.colorScheme.primary
+                                              : null,
+                                        ),
+                                      ),
+                                    SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            nota.titulo,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: selected
+                                                  ? FontWeight.w600
+                                                  : FontWeight.w400,
+                                              color: selected
+                                                  ? theme.colorScheme.primary
+                                                  : null,
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (nota.favorita)
-                                    Padding(
-                                      padding: EdgeInsets.only(left: 5),
-                                      child: Icon(
-                                        Icons.star_rounded,
-                                        size: 12,
-                                        color: theme.colorScheme.primary,
+                                          SizedBox(height: 5),
+                                          Text(
+                                            nota.extracto.isEmpty
+                                                ? t('Una página en blanco')
+                                                : nota.extracto,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: theme
+                                                  .colorScheme
+                                                  .onSurfaceVariant
+                                                  .withValues(alpha: .6),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                ],
+                                    if (nota.favorita)
+                                      Padding(
+                                        padding: EdgeInsets.only(left: 5),
+                                        child: Icon(
+                                          Icons.star_rounded,
+                                          size: 12,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                    boton,
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -422,6 +522,7 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
     VoidCallback onTap, {
     int? count,
     bool compacto = false,
+    Widget? adicional,
   }) {
     final primary = Theme.of(context).colorScheme.primary;
     return Padding(
@@ -435,7 +536,7 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: 10,
-              vertical: compacto ? 8 : 10,
+              vertical: compacto ? 2 : 10,
             ),
             child: Row(
               children: [
@@ -452,6 +553,7 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
                     ),
                   ),
                 ),
+                ?adicional,
                 if (count != null)
                   Text(
                     '$count',

@@ -56,4 +56,15 @@ void main() {
     expect(t('Nueva nota'), 'My new note');
     gestor.aplicar('en', original);
   });
+
+  test('Una actualización completa claves nuevas y conserva ediciones XML', () {
+    final gestor = GestorIdiomas.instancia;
+    const anterior =
+        '<idioma codigo="en"><texto clave="Nueva nota">My note</texto></idioma>';
+    final completo = gestor.completarCatalogo('en', anterior);
+    final textos = gestor.validar(completo, 'en');
+    expect(textos['Nueva nota'], 'My note');
+    expect(textos['Exportar a…'], 'Export to…');
+    expect(() => gestor.validar(anterior, 'en'), throwsFormatException);
+  });
 }

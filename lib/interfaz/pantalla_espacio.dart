@@ -20,7 +20,8 @@ import '../idiomas/gestor_idiomas.dart';
 import 'modulos/panel_tareas.dart';
 import 'modulos/panel_sincronizacion.dart';
 import 'modulos/panel_opciones.dart';
-import 'modulos/panel_plugins.dart';
+import '../dominio/nota.dart';
+import '../plugins/plugin_exportacion.dart';
 import 'modulos/panel_acerca.dart';
 
 class PantallaEspacio extends StatefulWidget {
@@ -128,6 +129,8 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
             final sidebar = PanelBoveda(
               controller: c,
               alCrear: _crearNota,
+              accionesNotas: _accionesNotas,
+              accionesCarpeta: _accionesCarpeta,
               alCrearCarpeta: _crearCarpeta,
               alImportar: _importarMarkdown,
               alAbrirOpciones: () => _cambiarModulo('opciones'),
@@ -190,11 +193,12 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
                                           key: _editor,
                                           nota: c.notaSeleccionada!,
                                           controller: c,
-                                          alRenombrar: _renombrarNota,
-                                          alExportar: () =>
-                                              _cambiarModulo('plugins'),
-                                          alMover: _moverNota,
-                                          alEnviarPapelera: _enviarPapelera,
+                                          alRenombrar: () => _renombrarNota(
+                                            c.notaSeleccionada!,
+                                          ),
+                                          acciones: _accionesNotas([
+                                            c.notaSeleccionada!,
+                                          ]),
                                         ),
                                 ),
                               ],
@@ -277,13 +281,6 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
           t('Sincronización'),
           _modulo == 'sincronizacion',
           () => _cambiarModulo('sincronizacion'),
-        ),
-        SizedBox(height: 12),
-        _botonLateral(
-          Icons.extension_outlined,
-          t('Plugins'),
-          _modulo == 'plugins',
-          () => _cambiarModulo('plugins'),
         ),
         Spacer(),
         _botonLateral(
@@ -571,17 +568,16 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
     ),
   );
 
-  void _crearNota() {
+  void _crearNota({String? enCarpeta}) {
     _cambiarModulo('notas');
     _estructura.currentState?.closeDrawer();
-    c.crearNota();
+    c.crearNota(enCarpeta: enCarpeta);
   }
 
   static const _nombresModulos = {
     'notas': 'Notas',
     'tareas': 'Tareas',
     'sincronizacion': 'Sincronización',
-    'plugins': 'Plugins',
     'opciones': 'Opciones',
     'acerca': 'Acerca de',
   };
@@ -594,7 +590,6 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
   Widget _panelModulo() => switch (_modulo) {
     'tareas' => PanelTareas(controlador: c),
     'sincronizacion' => PanelSincronizacion(controlador: c),
-    'plugins' => PanelPlugins(controlador: c),
     'opciones' => PanelOpciones(controlador: c),
     'acerca' => PanelAcerca(),
     _ => _estadoVacio(context),
@@ -607,9 +602,7 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
     c.anadirCarpeta,
   );
 
-  Future<void> _renombrarNota() async {
-    final nota = c.notaSeleccionada;
-    if (nota == null) return;
+  Future<void> _renombrarNota(Nota nota) async {
     await _dialogoNombre(
       'Renombrar nota',
       nota.titulo,
@@ -650,7 +643,7 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
                   autofocus: true,
                   decoration: InputDecoration(
                     labelText: t(label),
-                    errorText: error,
+                    errorText: error == null ? null : t(error!),
                   ),
                   onSubmitted: (_) => submit(),
                 ),
@@ -672,9 +665,7 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
     text.dispose();
   }
 
-  Future<void> _moverNota() async {
-    final nota = c.notaSeleccionada;
-    if (nota == null) return;
+  Future<void> _moverNotas(List<Nota> notas) async {
     final destino = await showDialog<String>(
       context: context,
       builder: (context) => SimpleDialog(
@@ -693,24 +684,181 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
         ],
       ),
     );
-    if (destino != null) c.moverNota(nota.id, destino);
+    if (destino != null) c.moverNotas(notas.map((nota) => nota.id), destino);
   }
 
-  void _enviarPapelera() {
-    final nota = c.notaSeleccionada;
-    if (nota == null) return;
-    c.enviarPapelera(nota.id);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+  void _enviarPapelera(List<Nota> notas) {
+    _estructura.currentState?.closeDrawer();
+    final ids = notas.map((nota) => nota.id).toList();
+    c.enviarNotasPapelera(ids);
+    ScaffoldMessenger.of(context)
+      ..removeCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            notas.length == 1
+                ? t('«{titulo}» está en la papelera.', {
+                    'titulo': notas.single.titulo,
+                  })
+                : t('{cantidad} notas enviadas a la papelera.', {
+                    'cantidad': notas.length,
+                  }),
+          ),
+          action: SnackBarAction(
+            label: t('Deshacer'),
+            onPressed: () => c.restaurarNotas(ids),
+          ),
+        ),
+      );
+  }
+
+  List<Widget> _accionesNotas(List<Nota> notas) {
+    if (notas.isEmpty) return [];
+    final ids = notas.map((nota) => nota.id).toList();
+    final enPapelera = notas.every((nota) => nota.eliminada);
+    final todasFavoritas = notas.every((nota) => nota.favorita);
+    return [
+      if (notas.length > 1)
+        MenuItemButton(
+          child: Text(
+            t('{cantidad} notas seleccionadas', {'cantidad': notas.length}),
+          ),
+        ),
+      if (notas.length == 1) ...[
+        MenuItemButton(
+          leadingIcon: const Icon(Icons.open_in_new, size: 18),
+          onPressed: () {
+            c.limpiarSeleccion();
+            c.seleccionarNota(notas.single.id);
+            _cambiarModulo('notas');
+          },
+          child: Text(t('Abrir nota')),
+        ),
+        if (!enPapelera)
+          MenuItemButton(
+            leadingIcon: const Icon(Icons.edit_outlined, size: 18),
+            onPressed: () => _renombrarNota(notas.single),
+            child: Text(t('Renombrar')),
+          ),
+      ],
+      if (!enPapelera) ...[
+        MenuItemButton(
+          leadingIcon: const Icon(Icons.drive_file_move_outline, size: 18),
+          onPressed: () => _moverNotas(notas),
+          child: Text(t('Mover a carpeta')),
+        ),
+        MenuItemButton(
+          leadingIcon: Icon(
+            todasFavoritas ? Icons.star : Icons.star_border,
+            size: 18,
+          ),
+          onPressed: () => c.marcarFavoritas(ids, !todasFavoritas),
+          child: Text(
+            t(todasFavoritas ? 'Quitar de favoritas' : 'Añadir a favoritas'),
+          ),
+        ),
+      ],
+      if (c.exportacionHabilitada)
+        SubmenuButton(
+          leadingIcon: const Icon(Icons.file_download_outlined, size: 18),
+          menuChildren: [
+            for (final formato in FormatoExportacion.values)
+              MenuItemButton(
+                onPressed: _operacionArchivo
+                    ? null
+                    : () => _exportarNotas(ids, formato),
+                child: Text(
+                  formato == FormatoExportacion.markdown
+                      ? (notas.length > 1 ? 'Markdown (ZIP)' : 'Markdown')
+                      : formato.name.toUpperCase(),
+                ),
+              ),
+          ],
+          child: Text(t('Exportar a…')),
+        ),
+      const Divider(),
+      MenuItemButton(
+        leadingIcon: Icon(
+          enPapelera ? Icons.restore_from_trash : Icons.delete_outline,
+          size: 18,
+        ),
+        onPressed: () =>
+            enPapelera ? c.restaurarNotas(ids) : _enviarPapelera(notas),
+        child: Text(t(enPapelera ? 'Restaurar' : 'Mover a la papelera')),
+      ),
+    ];
+  }
+
+  List<Widget> _accionesCarpeta(String carpeta) => [
+    MenuItemButton(
+      leadingIcon: const Icon(Icons.note_add_outlined, size: 18),
+      onPressed: () => _crearNota(enCarpeta: carpeta),
+      child: Text(t('Nueva nota')),
+    ),
+    MenuItemButton(
+      leadingIcon: const Icon(Icons.edit_outlined, size: 18),
+      onPressed: () => _dialogoNombre(
+        'Renombrar carpeta',
+        carpeta,
+        'Nombre de la carpeta',
+        (nombre) => c.renombrarCarpeta(carpeta, nombre),
+      ),
+      child: Text(t('Renombrar carpeta')),
+    ),
+    MenuItemButton(
+      leadingIcon: const Icon(Icons.delete_outline, size: 18),
+      onPressed: () => _eliminarCarpeta(carpeta),
+      child: Text(t('Eliminar carpeta')),
+    ),
+  ];
+
+  Future<void> _eliminarCarpeta(String carpeta) async {
+    final eliminar = await showDialog<bool>(
+      context: context,
+      builder: (contexto) => AlertDialog(
+        title: Text(t('Eliminar carpeta')),
         content: Text(
-          t('«{titulo}» está en la papelera.', {'titulo': nota.titulo}),
+          t(
+            'Se eliminará la carpeta «{carpeta}». Sus notas se conservarán en Mi bóveda, sin carpeta.',
+            {'carpeta': carpeta},
+          ),
         ),
-        action: SnackBarAction(
-          label: t('Deshacer'),
-          onPressed: () => c.restaurarNota(nota.id),
-        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(contexto, false),
+            child: Text(t('Cancelar')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(contexto, true),
+            child: Text(t('Eliminar')),
+          ),
+        ],
       ),
     );
+    if (eliminar == true) c.eliminarCarpeta(carpeta);
+  }
+
+  Future<void> _exportarNotas(
+    List<String> ids,
+    FormatoExportacion formato,
+  ) async {
+    if (_operacionArchivo || !c.exportacionHabilitada) return;
+    setState(() => _operacionArchivo = true);
+    try {
+      // Resolver por identificador recoge el contenido más reciente del editor.
+      final notas = ids.map(c.notaPorId).whereType<Nota>().toList();
+      final archivo = await PluginExportacion().exportar(notas, formato);
+      final destino = await FilePicker.saveFile(
+        fileName: archivo.nombre,
+        bytes: archivo.bytes,
+        mimeType: archivo.tipoMime,
+      );
+      if (destino != null) _mensaje(t('Exportación completada.'));
+    } catch (error) {
+      _mensaje('${t('No se ha podido exportar.')} $error');
+    } finally {
+      if (mounted) setState(() => _operacionArchivo = false);
+    }
   }
 
   Future<void> _importarMarkdown() async {
@@ -878,7 +1026,9 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
 
   void _mensaje(String text) {
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+      ScaffoldMessenger.of(context)
+        ..removeCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(text)));
     }
   }
 }
