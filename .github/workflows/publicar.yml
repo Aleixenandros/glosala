@@ -1,0 +1,47 @@
+name: Preparar versión
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: version-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validar-y-compilar:
+    uses: ./.github/workflows/compilar.yml
+
+  preparar-borrador:
+    name: Crear borrador con artefactos y sumas SHA-256
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: validar-y-compilar
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: glosala-*
+          path: distribucion
+          merge-multiple: true
+      - name: Calcular integridad de los paquetes
+        run: |
+          cd distribucion
+          sha256sum -- * > SHA256SUMS.txt
+      - name: Crear borrador único
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if gh release view "$GITHUB_REF_NAME" --json isDraft > /tmp/version.json 2>/dev/null; then
+            python3 -c 'import json; assert json.load(open("/tmp/version.json"))["isDraft"], "La versión ya está publicada: no se sobrescribe."'
+          else
+            gh release create "$GITHUB_REF_NAME" --draft --verify-tag --title "Glosala $GITHUB_REF_NAME" --notes-file documentacion/notas_distribucion.md
+          fi
+          gh release upload "$GITHUB_REF_NAME" distribucion/* --clobber

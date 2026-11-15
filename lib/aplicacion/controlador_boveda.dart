@@ -1,0 +1,455 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
+
+import '../datos/repositorio_boveda.dart';
+import '../datos/notas_bienvenida.dart';
+import '../dominio/nota.dart';
+import '../dominio/boveda.dart';
+import '../dominio/tarea.dart';
+
+enum FiltroNotas { todas, favoritas, papelera }
+
+enum EstadoGuardado { guardado, guardando, error }
+
+enum ModoEditor { editar, dividir, leer }
+
+class ControladorBoveda extends ChangeNotifier {
+  ControladorBoveda(this.repositorio);
+
+  final RepositorioBoveda repositorio;
+  final List<Nota> _notas = [];
+  final List<String> _carpetas = [];
+  final List<String> _idsAbiertas = [];
+  final List<Tarea> _tareas = [];
+  final Map<String, dynamic> _preferencias = {};
+  List<Tarea> get tareas => List.unmodifiable(_tareas);
+  Map<String, dynamic> get preferencias => Map.unmodifiable(_preferencias);
+
+  void configurar(String clave, dynamic valor) {
+    _preferencias[clave] = valor;
+    _cambio();
+  }
+
+  void anadirTarea(String titulo, {String? padre}) {
+    if (titulo.trim().isEmpty) return;
+    final nueva = Tarea(id: const Uuid().v4(), titulo: titulo.trim());
+    if (padre == null) {
+      _tareas.add(nueva);
+    } else {
+      _transformarTarea(
+        padre,
+        (tarea) => tarea.copiar(
+          completada: false,
+          subtareas: [...tarea.subtareas, nueva],
+        ),
+      );
+    }
+    _cambio();
+  }
+
+  void editarTarea(String id, String titulo) {
+    if (titulo.trim().isEmpty) return;
+    _transformarTarea(id, (tarea) => tarea.copiar(titulo: titulo.trim()));
+    _cambio();
+  }
+
+  void completarTarea(String id, bool completada) {
+    Tarea completar(Tarea tarea) => tarea.copiar(
+      completada: completada,
+      subtareas: tarea.subtareas.map(completar).toList(),
+    );
+    _transformarTarea(id, completar);
+    _cambio();
+  }
+
+  void eliminarTarea(String id) {
+    List<Tarea> eliminar(List<Tarea> tareas) =>
+        tareas.where((t) => t.id != id).map((t) {
+          final hijas = eliminar(t.subtareas);
+          return t.copiar(
+            subtareas: hijas,
+            completada: hijas.isEmpty
+                ? t.completada
+                : hijas.every((h) => h.completada),
+          );
+        }).toList();
+    final resultado = eliminar(_tareas);
+    _tareas
+      ..clear()
+      ..addAll(resultado);
+    _cambio();
+  }
+
+  void _transformarTarea(String id, Tarea Function(Tarea) transformar) {
+    Tarea visitar(Tarea tarea) {
+      if (tarea.id == id) return transformar(tarea);
+      final hijas = tarea.subtareas.map(visitar).toList();
+      return tarea.copiar(
+        subtareas: hijas,
+        completada: hijas.isEmpty
+            ? tarea.completada
+            : hijas.every((h) => h.completada),
+      );
+    }
+
+    final resultado = _tareas.map(visitar).toList();
+    _tareas
+      ..clear()
+      ..addAll(resultado);
+  }
+
+  void aplicarSincronizacion(List<Nota> notas, List<String> carpetas) {
+    _notas
+      ..clear()
+      ..addAll(notas);
+    final todas = {..._carpetas, ...carpetas};
+    _carpetas
+      ..clear()
+      ..addAll(todas);
+    _cambio();
+  }
+
+  String? _idSeleccionada;
+  String busqueda = '';
+  String? carpeta;
+  String? tag;
+  FiltroNotas filtro = FiltroNotas.todas;
+  ModoEditor modoEditor = ModoEditor.leer;
+  bool modoOscuro = true;
+  bool mapaVisible = false;
+  bool cargada = false;
+  EstadoGuardado estadoGuardado = EstadoGuardado.guardado;
+  String? errorLectura;
+  String? errorGuardado;
+  int _revision = 0;
+  int _revisionGuardada = 0;
+  Future<void>? _guardadoEnCurso;
+  bool _cerrado = false;
+
+  List<Nota> get notas => List.unmodifiable(_notas);
+  List<Nota> get notasActivas =>
+      _notas.where((nota) => !nota.eliminada).toList();
+  List<String> get carpetas => {
+    ..._carpetas,
+    ..._notas.map((n) => n.carpeta),
+  }.where((carpeta) => carpeta.isNotEmpty).toList()..sort();
+  List<String> get etiquetas =>
+      notasActivas.expand((nota) => nota.etiquetas).toSet().toList()..sort();
+  Nota? get notaSeleccionada => notaPorId(_idSeleccionada);
+  List<Nota> get notasAbiertas =>
+      _idsAbiertas.map(notaPorId).whereType<Nota>().toList();
+
+  Nota? notaPorId(String? id) {
+    for (final nota in _notas) {
+      if (nota.id == id) return nota;
+    }
+    return null;
+  }
+
+  Nota? notaPorTitulo(String titulo) {
+    for (final nota in notasActivas) {
+      if (nota.titulo.toLowerCase() == titulo.trim().toLowerCase()) return nota;
+    }
+    return null;
+  }
+
+  List<Nota> get notasVisibles {
+    final palabras = busqueda.toLowerCase().trim().split(RegExp(r'\s+'));
+    return _notas.where((nota) {
+      if (nota.eliminada != (filtro == FiltroNotas.papelera)) return false;
+      if (filtro == FiltroNotas.favoritas && !nota.favorita) return false;
+      if (carpeta != null && nota.carpeta != carpeta) return false;
+      if (tag != null && !nota.etiquetas.contains(tag)) return false;
+      final textoBuscable = '${nota.titulo}\n${nota.contenido}'.toLowerCase();
+      return palabras.every(textoBuscable.contains);
+    }).toList()..sort((a, b) {
+      final order = b.modificadaEl.compareTo(a.modificadaEl);
+      return order != 0 ? order : a.titulo.compareTo(b.titulo);
+    });
+  }
+
+  List<Nota> enlacesEntrantes(Nota destino) => notasActivas
+      .where(
+        (nota) =>
+            nota.id != destino.id &&
+            nota.enlaces.any(
+              (link) => link.toLowerCase() == destino.titulo.toLowerCase(),
+            ),
+      )
+      .toList();
+
+  Boveda get instantanea => Boveda(
+    notas: List.of(_notas),
+    carpetas: List.of(_carpetas),
+    idSeleccionada: _idSeleccionada,
+    modoOscuro: modoOscuro,
+    tareas: List.of(_tareas),
+    preferencias: Map.of(_preferencias),
+  );
+
+  Future<void> inicializar() async {
+    errorLectura = null;
+    _notificar();
+    try {
+      final almacenada = await repositorio.cargar();
+      final boveda = almacenada ?? bovedaBienvenida();
+      _notas
+        ..clear()
+        ..addAll(boveda.notas);
+      _carpetas
+        ..clear()
+        ..addAll(boveda.carpetas);
+      _tareas
+        ..clear()
+        ..addAll(boveda.tareas);
+      _preferencias
+        ..clear()
+        ..addAll(boveda.preferencias);
+      modoOscuro = boveda.modoOscuro;
+      _idSeleccionada =
+          notaPorId(boveda.idSeleccionada)?.id ?? notasActivas.firstOrNull?.id;
+      _idsAbiertas.clear();
+      if (_idSeleccionada != null) _idsAbiertas.add(_idSeleccionada!);
+      cargada = true;
+      if (almacenada == null) {
+        _revision++;
+        await guardarPendientes();
+      }
+    } catch (error) {
+      errorLectura = error.toString();
+    }
+    _notificar();
+  }
+
+  void cambiarBusqueda(String value) {
+    busqueda = value;
+    _notificar();
+  }
+
+  void cambiarFiltro(
+    FiltroNotas value, {
+    String? enCarpeta,
+    String? conEtiqueta,
+  }) {
+    filtro = value;
+    carpeta = enCarpeta;
+    tag = conEtiqueta;
+    mapaVisible = false;
+    _notificar();
+  }
+
+  void mostrarMapa(bool value) {
+    mapaVisible = value;
+    _notificar();
+  }
+
+  void cambiarModoEditor(ModoEditor mode) {
+    modoEditor = mode;
+    _notificar();
+  }
+
+  void alternarTema() {
+    modoOscuro = !modoOscuro;
+    _preferencias['apariencia'] = modoOscuro ? 'oscuro' : 'claro';
+    _cambio();
+  }
+
+  void seleccionarNota(String id) {
+    if (notaPorId(id) == null) return;
+    _idSeleccionada = id;
+    if (!_idsAbiertas.contains(id)) _idsAbiertas.add(id);
+    mapaVisible = false;
+    _cambio();
+  }
+
+  void cerrarPestana(String id) {
+    _idsAbiertas.remove(id);
+    if (_idSeleccionada == id) _idSeleccionada = _idsAbiertas.lastOrNull;
+    _cambio();
+  }
+
+  String _tituloUnico(String candidato) {
+    final base = candidato.trim().isEmpty ? 'Sin título' : candidato.trim();
+    var titulo = base;
+    var sufijo = 2;
+    while (notaPorTitulo(titulo) != null) {
+      titulo = '$base (${sufijo++})';
+    }
+    return titulo;
+  }
+
+  Nota crearNota({
+    String titulo = 'Sin título',
+    String contenido = '',
+    String? enCarpeta,
+  }) {
+    final ahora = DateTime.now();
+    final nota = Nota(
+      id: const Uuid().v4(),
+      titulo: _tituloUnico(titulo),
+      contenido: contenido,
+      carpeta: enCarpeta ?? carpeta ?? '',
+      creadaEl: ahora,
+      modificadaEl: ahora,
+    );
+    _notas.add(nota);
+    _idSeleccionada = nota.id;
+    _idsAbiertas.add(nota.id);
+    filtro = FiltroNotas.todas;
+    carpeta = null;
+    tag = null;
+    busqueda = '';
+    mapaVisible = false;
+    modoEditor = ModoEditor.editar;
+    _cambio();
+    return nota;
+  }
+
+  void abrirEnlaceInterno(String titulo) {
+    final existente = notaPorTitulo(titulo);
+    if (existente != null) {
+      seleccionarNota(existente.id);
+    } else if (titulo.trim().isNotEmpty) {
+      crearNota(titulo: titulo.trim());
+    }
+  }
+
+  void actualizarContenido(String id, String contenido) {
+    final nota = notaPorId(id);
+    if (nota == null || nota.eliminada || nota.contenido == contenido) return;
+    _reemplazar(
+      nota.copiar(contenido: contenido, modificadaEl: DateTime.now()),
+    );
+    _cambio();
+  }
+
+  /// Los títulos son únicos para que los enlaces internos se resuelvan sin ambigüedad.
+  String? renombrarNota(String id, String titulo) {
+    final nota = notaPorId(id);
+    final recortado = titulo.trim();
+    if (nota == null) return 'No se ha encontrado la nota.';
+    if (recortado.isEmpty) return 'Escribe un título.';
+    if (recortado.contains(RegExp(r'[\[\]|\n\r]'))) {
+      return 'El título no puede contener corchetes, | ni saltos de línea.';
+    }
+    final existente = notaPorTitulo(recortado);
+    if (existente != null && existente.id != id) {
+      return 'Ya existe una nota con ese título.';
+    }
+    final ahora = DateTime.now();
+    for (var i = 0; i < _notas.length; i++) {
+      final actual = _notas[i];
+      final contenido = SintaxisEnlaceInterno.renombrarDestino(
+        actual.contenido,
+        nota.titulo,
+        recortado,
+      );
+      if (contenido != actual.contenido || actual.id == id) {
+        _notas[i] = actual.copiar(
+          titulo: actual.id == id ? recortado : actual.titulo,
+          contenido: contenido,
+          modificadaEl: ahora,
+        );
+      }
+    }
+    _cambio();
+    return null;
+  }
+
+  String? anadirCarpeta(String value) {
+    final name = value.trim();
+    if (name.isEmpty) return 'Escribe un nombre para la carpeta.';
+    if (carpetas.any((f) => f.toLowerCase() == name.toLowerCase())) {
+      return 'Esa carpeta ya existe.';
+    }
+    _carpetas.add(name);
+    cambiarFiltro(FiltroNotas.todas, enCarpeta: name);
+    _cambio();
+    return null;
+  }
+
+  void moverNota(String id, String destino) {
+    final nota = notaPorId(id);
+    if (nota == null) return;
+    _reemplazar(nota.copiar(carpeta: destino, modificadaEl: DateTime.now()));
+    _cambio();
+  }
+
+  void alternarFavorita(String id) {
+    final nota = notaPorId(id);
+    if (nota == null) return;
+    _reemplazar(nota.copiar(favorita: !nota.favorita));
+    _cambio();
+  }
+
+  void enviarPapelera(String id) {
+    final nota = notaPorId(id);
+    if (nota == null) return;
+    _reemplazar(nota.copiar(eliminada: true, modificadaEl: DateTime.now()));
+    _idsAbiertas.remove(id);
+    if (_idSeleccionada == id) _idSeleccionada = _idsAbiertas.lastOrNull;
+    _cambio();
+  }
+
+  void restaurarNota(String id) {
+    final nota = notaPorId(id);
+    if (nota == null) return;
+    _reemplazar(
+      nota.copiar(
+        titulo: _tituloUnico(nota.titulo),
+        eliminada: false,
+        modificadaEl: DateTime.now(),
+      ),
+    );
+    cambiarFiltro(FiltroNotas.todas);
+    seleccionarNota(id);
+  }
+
+  void _reemplazar(Nota nota) =>
+      _notas[_notas.indexWhere((n) => n.id == nota.id)] = nota;
+
+  void _cambio() {
+    _revision++;
+    _notificar();
+    // Las escrituras serializadas agrupan los cambios recibidos durante un guardado.
+    unawaited(guardarPendientes());
+  }
+
+  Future<void> guardarPendientes() {
+    if (!cargada || _revision == _revisionGuardada) return Future.value();
+    return _guardadoEnCurso ??= _vaciarGuardados().whenComplete(
+      () => _guardadoEnCurso = null,
+    );
+  }
+
+  Future<void> _vaciarGuardados() async {
+    estadoGuardado = EstadoGuardado.guardando;
+    errorGuardado = null;
+    _notificar();
+    try {
+      while (_revisionGuardada != _revision) {
+        final revision = _revision;
+        await repositorio.guardar(instantanea);
+        _revisionGuardada = revision;
+      }
+      estadoGuardado = EstadoGuardado.guardado;
+    } catch (error) {
+      estadoGuardado = EstadoGuardado.error;
+      errorGuardado = error.toString();
+    }
+    _notificar();
+  }
+
+  void _notificar() {
+    if (!_cerrado) notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _cerrado = true;
+    unawaited(guardarPendientes().then((_) => repositorio.cerrar()));
+    super.dispose();
+  }
+}
