@@ -144,8 +144,9 @@ class ControladorBoveda extends ChangeNotifier {
   Nota? get notaSeleccionada => notaPorId(_idSeleccionada);
   List<Nota> get notasAbiertas =>
       _idsAbiertas.map(notaPorId).whereType<Nota>().toList();
-  List<Nota> get notasMarcadas =>
-      notasVisibles.where((nota) => _idsMarcadas.contains(nota.id)).toList();
+  List<Nota> get notasMarcadas => _idsMarcadas.isEmpty
+      ? []
+      : notasVisibles.where((nota) => _idsMarcadas.contains(nota.id)).toList();
 
   void marcarNota(String id, {bool rango = false, bool acumular = true}) {
     final visibles = notasVisibles.map((nota) => nota.id).toList();
@@ -524,7 +525,9 @@ class ControladorBoveda extends ChangeNotifier {
       _notas[_notas.indexWhere((n) => n.id == nota.id)] = nota;
 
   void _cambio() {
-    _idsMarcadas.retainAll(notasVisibles.map((nota) => nota.id));
+    if (_idsMarcadas.isNotEmpty) {
+      _idsMarcadas.retainAll(notasVisibles.map((nota) => nota.id));
+    }
     _revision++;
     _notificar();
     // Las escrituras serializadas agrupan los cambios recibidos durante un guardado.

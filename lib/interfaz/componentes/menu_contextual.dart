@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Abre las acciones con botón derecho, pulsación larga o un botón accesible.
 class MenuContextual extends StatefulWidget {
@@ -42,13 +43,21 @@ class _EstadoMenuContextual extends State<MenuContextual> {
         onPressed: () =>
             controlador.isOpen ? controlador.close() : controlador.open(),
       );
-      return GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onSecondaryTapDown: (detalles) =>
-            controlador.open(position: detalles.localPosition),
-        onLongPressStart: (detalles) =>
-            controlador.open(position: detalles.localPosition),
-        child: widget.construir?.call(boton) ?? boton,
+      return CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.contextMenu): () =>
+              controlador.open(),
+          const SingleActivator(LogicalKeyboardKey.f10, shift: true): () =>
+              controlador.open(),
+        },
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onSecondaryTapDown: (detalles) =>
+              controlador.open(position: detalles.localPosition),
+          onLongPressStart: (detalles) =>
+              controlador.open(position: detalles.localPosition),
+          child: widget.construir?.call(boton) ?? boton,
+        ),
       );
     },
   );

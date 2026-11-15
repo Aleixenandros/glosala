@@ -187,7 +187,16 @@ Ctrl / Cmd + S: save
 Ctrl / Cmd + B: bold
 Ctrl / Cmd + I: italic
 
-Use [[Note title]] to link ideas and #tags to organize them. Missing notes are created when you open their links. Trash lets you restore notes. Browsers may reserve some shortcuts.</texto>
+Use [[Note title]] to link ideas and #tags to organize them. Missing notes are created when you open their links. Trash lets you restore notes. Browsers may reserve some shortcuts.
+
+In the note list:
+Ctrl / Cmd + click: add or remove a note from the selection
+Shift + click: select a range
+Ctrl / Cmd + A: select all visible notes
+Escape: clear the selection or close the menu
+Shift + F10: open actions for the focused item
+On mobile, enable checkboxes with Select notes.
+Export to… appears when the plugin is enabled in Settings → Plugins.</texto>
   <texto clave="Exportar a…">Export to…</texto>
   <texto clave="Abrir nota">Open note</texto>
   <texto clave="Acciones de {titulo}">Actions for {titulo}</texto>

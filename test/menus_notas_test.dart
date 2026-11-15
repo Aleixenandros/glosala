@@ -291,6 +291,70 @@ void main() {
   });
 
   testWidgets(
+    'Teclado: menú contextual, selección total y Escape dentro del listado',
+    (probador) async {
+      final controlador = await preparar(probador);
+      final boton = probador.widget<IconButton>(
+        find.descendant(
+          of: find.byKey(const ValueKey('nota-uno')),
+          matching: find.byType(IconButton),
+        ),
+      );
+      boton.focusNode!.requestFocus();
+      await probador.pumpAndSettle();
+      await probador.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await probador.sendKeyEvent(LogicalKeyboardKey.f10);
+      await probador.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await probador.pumpAndSettle();
+      expect(find.widgetWithText(MenuItemButton, 'Renombrar'), findsOneWidget);
+      await probador.sendKeyEvent(LogicalKeyboardKey.escape);
+      await probador.pumpAndSettle();
+      expect(find.widgetWithText(MenuItemButton, 'Renombrar'), findsNothing);
+      await probador.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await probador.sendKeyEvent(LogicalKeyboardKey.keyA);
+      await probador.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await probador.pumpAndSettle();
+      expect(controlador.notasMarcadas, hasLength(3));
+      await probador.sendKeyEvent(LogicalKeyboardKey.escape);
+      await probador.pumpAndSettle();
+      expect(controlador.notasMarcadas, isEmpty);
+      await probador.tap(find.text('Editar'));
+      await probador.pumpAndSettle();
+      await probador.tap(find.byKey(const Key('markdown-editor')));
+      await probador.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await probador.sendKeyEvent(LogicalKeyboardKey.keyA);
+      await probador.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await probador.pumpAndSettle();
+      expect(controlador.notasMarcadas, isEmpty);
+      final editor = probador.widget<TextField>(
+        find.byKey(const Key('markdown-editor')),
+      );
+      expect(
+        editor.controller!.selection.textInside(editor.controller!.text),
+        'Contenido tres',
+      );
+      expect(probador.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'Un clic normal abre una nota tras usar Ctrl sin activar las casillas manualmente',
+    (probador) async {
+      final controlador = await preparar(probador);
+      await probador.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await probador.tap(find.byKey(const ValueKey('nota-uno')));
+      await probador.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await probador.pumpAndSettle();
+      expect(controlador.notasMarcadas.single.id, 'uno');
+      await probador.tap(find.byKey(const ValueKey('nota-dos')));
+      await probador.pumpAndSettle();
+      expect(controlador.notaSeleccionada!.id, 'dos');
+      expect(controlador.notasMarcadas, isEmpty);
+      expect(probador.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'Cancelar o fallar al exportar conserva la nota y permite reintentar',
     (probador) async {
       final controlador = await preparar(probador);

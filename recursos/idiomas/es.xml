@@ -187,7 +187,16 @@ Ctrl / Cmd + S: guardar
 Ctrl / Cmd + B: negrita
 Ctrl / Cmd + I: cursiva
 
-Usa [[Título de nota]] para enlazar ideas y #etiquetas para organizarlas. Si la nota no existe, se creará al abrir el enlace. La papelera permite restaurar las notas. En web, el navegador puede reservar algunos atajos.</texto>
+Usa [[Título de nota]] para enlazar ideas y #etiquetas para organizarlas. Si la nota no existe, se creará al abrir el enlace. La papelera permite restaurar las notas. En web, el navegador puede reservar algunos atajos.
+
+En el listado de notas:
+Ctrl / Cmd + clic: añadir o quitar una nota de la selección
+Mayús + clic: seleccionar un rango
+Ctrl / Cmd + A: seleccionar todas las notas visibles
+Escape: cancelar la selección o cerrar el menú
+Mayús + F10: abrir las acciones del elemento enfocado
+En móvil, activa las casillas con Seleccionar notas.
+Exportar a… aparece al habilitar el plugin en Opciones → Plugins.</texto>
   <texto clave="Exportar a…">Exportar a…</texto>
   <texto clave="Abrir nota">Abrir nota</texto>
   <texto clave="Acciones de {titulo}">Acciones de {titulo}</texto>

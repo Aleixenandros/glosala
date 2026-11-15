@@ -50,7 +50,9 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
   Widget build(BuildContext context) {
     final c = widget.controller;
     final theme = Theme.of(context);
+    final visibles = c.notasVisibles;
     final marcadas = c.notasMarcadas;
+    final idsMarcadas = marcadas.map((nota) => nota.id).toSet();
     final seleccionando = _modoSeleccion || marcadas.isNotEmpty;
     if (_buscador.text != c.busqueda) {
       _buscador.value = TextEditingValue(
@@ -259,7 +261,7 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
                     ),
                   ),
                   Text(
-                    '${c.notasVisibles.length}',
+                    '${visibles.length}',
                     style: const TextStyle(fontSize: 11),
                   ),
                 ],
@@ -281,160 +283,172 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
             ),
           ),
           Expanded(
-            child: c.notasVisibles.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Text(
-                        t(
-                          'No hay notas aquí.\nPrueba otra búsqueda o crea una nueva.',
-                        ),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF8D899A),
-                          height: 1.8,
+            child: CallbackShortcuts(
+              bindings: {
+                const SingleActivator(LogicalKeyboardKey.keyA, control: true):
+                    c.marcarTodasVisibles,
+                const SingleActivator(LogicalKeyboardKey.keyA, meta: true):
+                    c.marcarTodasVisibles,
+                const SingleActivator(LogicalKeyboardKey.escape): () {
+                  setState(() => _modoSeleccion = false);
+                  c.limpiarSeleccion();
+                },
+              },
+              child: visibles.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text(
+                          t(
+                            'No hay notas aquí.\nPrueba otra búsqueda o crea una nueva.',
+                          ),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF8D899A),
+                            height: 1.8,
+                          ),
                         ),
                       ),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    itemCount: c.notasVisibles.length,
-                    itemBuilder: (context, index) {
-                      final nota = c.notasVisibles[index];
-                      final selected =
-                          c.notaSeleccionada?.id == nota.id && !c.mapaVisible;
-                      final marcada = marcadas.any(
-                        (actual) => actual.id == nota.id,
-                      );
-                      return MenuContextual(
-                        key: ValueKey('nota-${nota.id}'),
-                        descripcion: t('Acciones de {titulo}', {
-                          'titulo': nota.titulo,
-                        }),
-                        acciones: widget.accionesNotas(
-                          marcada ? marcadas : [nota],
-                        ),
-                        construir: (boton) => Padding(
-                          padding: EdgeInsets.only(bottom: 5),
-                          child: Material(
-                            color: (selected || marcada)
-                                ? theme.colorScheme.primary.withValues(
-                                    alpha: .12,
-                                  )
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                            child: InkWell(
+                    )
+                  : ListView.builder(
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      itemCount: visibles.length,
+                      itemBuilder: (context, index) {
+                        final nota = visibles[index];
+                        final selected =
+                            c.notaSeleccionada?.id == nota.id && !c.mapaVisible;
+                        final marcada = idsMarcadas.contains(nota.id);
+                        return MenuContextual(
+                          key: ValueKey('nota-${nota.id}'),
+                          descripcion: t('Acciones de {titulo}', {
+                            'titulo': nota.titulo,
+                          }),
+                          acciones: widget.accionesNotas(
+                            marcada ? marcadas : [nota],
+                          ),
+                          construir: (boton) => Padding(
+                            padding: EdgeInsets.only(bottom: 5),
+                            child: Material(
+                              color: (selected || marcada)
+                                  ? theme.colorScheme.primary.withValues(
+                                      alpha: .12,
+                                    )
+                                  : Colors.transparent,
                               borderRadius: BorderRadius.circular(8),
-                              onTap: () {
-                                final teclado = HardwareKeyboard.instance;
-                                if (seleccionando ||
-                                    teclado.isControlPressed ||
-                                    teclado.isMetaPressed ||
-                                    teclado.isShiftPressed) {
-                                  c.marcarNota(
-                                    nota.id,
-                                    rango: teclado.isShiftPressed,
-                                    acumular:
-                                        !teclado.isShiftPressed ||
-                                        teclado.isControlPressed ||
-                                        teclado.isMetaPressed,
-                                  );
-                                } else {
-                                  widget.alSeleccionar(nota);
-                                }
-                              },
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 10,
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (seleccionando)
-                                      SizedBox(
-                                        width: 28,
-                                        height: 28,
-                                        child: Checkbox(
-                                          value: marcada,
-                                          semanticLabel: t(
-                                            'Seleccionar {titulo}',
-                                            {'titulo': nota.titulo},
-                                          ),
-                                          onChanged: (_) =>
-                                              c.marcarNota(nota.id),
-                                        ),
-                                      )
-                                    else
-                                      Padding(
-                                        padding: EdgeInsets.only(top: 2),
-                                        child: Icon(
-                                          Icons.description_outlined,
-                                          size: 16,
-                                          color: selected
-                                              ? theme.colorScheme.primary
-                                              : null,
-                                        ),
-                                      ),
-                                    SizedBox(width: 10),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            nota.titulo,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: selected
-                                                  ? FontWeight.w600
-                                                  : FontWeight.w400,
-                                              color: selected
-                                                  ? theme.colorScheme.primary
-                                                  : null,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(8),
+                                onTap: () {
+                                  final teclado = HardwareKeyboard.instance;
+                                  if (_modoSeleccion ||
+                                      teclado.isControlPressed ||
+                                      teclado.isMetaPressed ||
+                                      teclado.isShiftPressed) {
+                                    c.marcarNota(
+                                      nota.id,
+                                      rango: teclado.isShiftPressed,
+                                      acumular:
+                                          !teclado.isShiftPressed ||
+                                          teclado.isControlPressed ||
+                                          teclado.isMetaPressed,
+                                    );
+                                  } else {
+                                    c.limpiarSeleccion();
+                                    widget.alSeleccionar(nota);
+                                  }
+                                },
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 10,
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      if (seleccionando)
+                                        SizedBox(
+                                          width: 28,
+                                          height: 28,
+                                          child: Checkbox(
+                                            value: marcada,
+                                            semanticLabel: t(
+                                              'Seleccionar {titulo}',
+                                              {'titulo': nota.titulo},
                                             ),
+                                            onChanged: (_) =>
+                                                c.marcarNota(nota.id),
                                           ),
-                                          SizedBox(height: 5),
-                                          Text(
-                                            nota.extracto.isEmpty
-                                                ? t('Una página en blanco')
-                                                : nota.extracto,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              color: theme
-                                                  .colorScheme
-                                                  .onSurfaceVariant
-                                                  .withValues(alpha: .6),
+                                        )
+                                      else
+                                        Padding(
+                                          padding: EdgeInsets.only(top: 2),
+                                          child: Icon(
+                                            Icons.description_outlined,
+                                            size: 16,
+                                            color: selected
+                                                ? theme.colorScheme.primary
+                                                : null,
+                                          ),
+                                        ),
+                                      SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              nota.titulo,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: selected
+                                                    ? FontWeight.w600
+                                                    : FontWeight.w400,
+                                                color: selected
+                                                    ? theme.colorScheme.primary
+                                                    : null,
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (nota.favorita)
-                                      Padding(
-                                        padding: EdgeInsets.only(left: 5),
-                                        child: Icon(
-                                          Icons.star_rounded,
-                                          size: 12,
-                                          color: theme.colorScheme.primary,
+                                            SizedBox(height: 5),
+                                            Text(
+                                              nota.extracto.isEmpty
+                                                  ? t('Una página en blanco')
+                                                  : nota.extracto,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: theme
+                                                    .colorScheme
+                                                    .onSurfaceVariant
+                                                    .withValues(alpha: .6),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    boton,
-                                  ],
+                                      if (nota.favorita)
+                                        Padding(
+                                          padding: EdgeInsets.only(left: 5),
+                                          child: Icon(
+                                            Icons.star_rounded,
+                                            size: 12,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                        ),
+                                      boton,
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                        );
+                      },
+                    ),
+            ),
           ),
           if (c.etiquetas.isNotEmpty)
             Padding(

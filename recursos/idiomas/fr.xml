@@ -187,7 +187,16 @@ Ctrl / Cmd + S : enregistrer
 Ctrl / Cmd + B : gras
 Ctrl / Cmd + I : italique
 
-Utilisez [[Titre de note]] pour relier les idées et des #étiquettes pour les organiser. Les notes manquantes sont créées à l’ouverture du lien. La corbeille permet de restaurer les notes. Le navigateur peut réserver certains raccourcis.</texto>
+Utilisez [[Titre de note]] pour relier les idées et des #étiquettes pour les organiser. Les notes manquantes sont créées à l’ouverture du lien. La corbeille permet de restaurer les notes. Le navigateur peut réserver certains raccourcis.
+
+Dans la liste des notes :
+Ctrl / Cmd + clic : ajouter ou retirer une note de la sélection
+Maj + clic : sélectionner une plage
+Ctrl / Cmd + A : sélectionner toutes les notes visibles
+Échap : annuler la sélection ou fermer le menu
+Maj + F10 : ouvrir les actions de l’élément ciblé
+Sur mobile, activez les cases avec Sélectionner des notes.
+Exporter en… apparaît lorsque le plugin est activé dans Options → Plugins.</texto>
   <texto clave="Exportar a…">Exporter en…</texto>
   <texto clave="Abrir nota">Ouvrir la note</texto>
   <texto clave="Acciones de {titulo}">Actions pour {titulo}</texto>

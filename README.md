@@ -24,7 +24,7 @@ Para Android, conecta un dispositivo o inicia un emulador y ejecuta `flutter run
 - **Apariencia:** claro, oscuro o sistema; temas Amatista, Bosque, Océano y Ámbar.
 - **Sincronización:** manual, mediante WebDAV o una carpeta de escritorio/NAS montada. Comparación de versiones y copias de conflicto, sin descartar silenciosamente contenido.
 - **Menús contextuales:** botón derecho, pulsación larga o botón de opciones en cada nota y carpeta. Las carpetas se pueden renombrar o eliminar conservando sus notas en la raíz.
-- **Selección múltiple:** Ctrl/Cmd + clic, Mayús + clic para rangos o casillas. Permite mover, marcar favoritas, enviar a la papelera, restaurar y exportar las notas seleccionadas. «Seleccionar todas» respeta la búsqueda y la carpeta visibles.
+- **Selección múltiple:** Ctrl/Cmd + clic, Mayús + clic para rangos o casillas. Permite mover, marcar favoritas, enviar a la papelera, restaurar y exportar las notas seleccionadas. «Seleccionar todas» respeta la búsqueda y la carpeta visibles. Con el foco en el listado, Ctrl/Cmd+A selecciona todas y Escape limpia la selección; Mayús+F10 abre el menú contextual.
 - **Plugins:** activación en **Opciones → Plugins**. Al habilitar Exportación de notas, el menú de cada nota o selección ofrece **Exportar a… → Markdown, HTML, PDF u ODS**. Varias notas en Markdown se reúnen en un ZIP.
 - **Acerca de:** versión, repositorio, licencias y comprobación de actualizaciones en GitHub Releases.
 

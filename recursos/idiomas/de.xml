@@ -187,7 +187,16 @@ Strg / Cmd + S: speichern
 Strg / Cmd + B: fett
 Strg / Cmd + I: kursiv
 
-Nutze [[Notiztitel]] zum Verknüpfen und #Schlagwörter zum Ordnen. Fehlende Notizen werden beim Öffnen des Links erstellt. Notizen im Papierkorb lassen sich wiederherstellen. Browser können Tastenkürzel reservieren.</texto>
+Nutze [[Notiztitel]] zum Verknüpfen und #Schlagwörter zum Ordnen. Fehlende Notizen werden beim Öffnen des Links erstellt. Notizen im Papierkorb lassen sich wiederherstellen. Browser können Tastenkürzel reservieren.
+
+In der Notizliste:
+Strg / Cmd + Klick: eine Notiz zur Auswahl hinzufügen oder daraus entfernen
+Umschalt + Klick: einen Bereich auswählen
+Strg / Cmd + A: alle sichtbaren Notizen auswählen
+Escape: die Auswahl aufheben oder das Menü schließen
+Umschalt + F10: Aktionen für das fokussierte Element öffnen
+Aktiviere auf Mobilgeräten die Kontrollkästchen mit Notizen auswählen.
+Exportieren als… erscheint, wenn das Plugin unter Einstellungen → Plugins aktiviert ist.</texto>
   <texto clave="Exportar a…">Exportieren als…</texto>
   <texto clave="Abrir nota">Notiz öffnen</texto>
   <texto clave="Acciones de {titulo}">Aktionen für {titulo}</texto>

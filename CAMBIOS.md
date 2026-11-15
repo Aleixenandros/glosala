@@ -4,6 +4,7 @@
 
 - Menús contextuales de notas y carpetas mediante botón derecho, pulsación larga o botón de opciones.
 - Selección múltiple con Ctrl/Cmd, Mayús y casillas; acciones por lote y exportación de la selección.
+- Atajos de menú contextual y selección total limitados al listado, respetando los atajos del editor.
 - Plugins dentro de Opciones; el exportador habilita el submenú «Exportar a…» en notas y selecciones.
 - Renombrado y eliminación de carpetas conservando sus notas, incluida la papelera, y propagación de los cambios al sincronizar.
 - Nuevos textos en los cinco idiomas y conservación de traducciones personales al actualizar los catálogos.

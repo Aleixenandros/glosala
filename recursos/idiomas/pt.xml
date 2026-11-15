@@ -187,7 +187,16 @@ Ctrl / Cmd + S: guardar
 Ctrl / Cmd + B: negrito
 Ctrl / Cmd + I: itálico
 
-Usa [[Título da nota]] para ligar ideias e #etiquetas para as organizar. As notas em falta são criadas ao abrir as ligações. O lixo permite restaurar notas. O navegador pode reservar alguns atalhos.</texto>
+Usa [[Título da nota]] para ligar ideias e #etiquetas para as organizar. As notas em falta são criadas ao abrir as ligações. O lixo permite restaurar notas. O navegador pode reservar alguns atalhos.
+
+Na lista de notas:
+Ctrl / Cmd + clique: adicionar ou remover uma nota da seleção
+Shift + clique: selecionar um intervalo
+Ctrl / Cmd + A: selecionar todas as notas visíveis
+Escape: cancelar a seleção ou fechar o menu
+Shift + F10: abrir as ações do elemento em foco
+No telemóvel, ative as caixas com Selecionar notas.
+Exportar para… aparece quando o plugin está ativo em Opções → Plugins.</texto>
   <texto clave="Exportar a…">Exportar para…</texto>
   <texto clave="Abrir nota">Abrir nota</texto>
   <texto clave="Acciones de {titulo}">Ações de {titulo}</texto>
