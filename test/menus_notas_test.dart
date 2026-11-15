@@ -355,6 +355,26 @@ void main() {
   );
 
   testWidgets(
+    'Ordenar y duplicar desde el listado abre una copia independiente',
+    (probador) async {
+      final controlador = await preparar(probador);
+      await probador.tap(find.byTooltip('Ordenar notas'));
+      await probador.pumpAndSettle();
+      await probador.tap(
+        find.widgetWithText(CheckedPopupMenuItem<OrdenNotas>, 'Título: A–Z'),
+      );
+      await probador.pumpAndSettle();
+      expect(controlador.notasVisibles.first.id, 'dos');
+      await abrir(probador, 'uno');
+      await elegir(probador, 'Duplicar');
+      expect(controlador.notaSeleccionada!.id, isNot('uno'));
+      expect(controlador.notaSeleccionada!.titulo, 'Nota uno (2)');
+      expect(controlador.notaSeleccionada!.contenido, 'Contenido uno');
+      expect(probador.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'Cancelar o fallar al exportar conserva la nota y permite reintentar',
     (probador) async {
       final controlador = await preparar(probador);

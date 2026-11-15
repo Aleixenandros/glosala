@@ -265,6 +265,25 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
                     style: const TextStyle(fontSize: 11),
                   ),
                 ],
+                PopupMenuButton<OrdenNotas>(
+                  tooltip: t('Ordenar notas'),
+                  icon: const Icon(Icons.sort, size: 18),
+                  initialValue: c.ordenNotas,
+                  onSelected: c.cambiarOrdenNotas,
+                  itemBuilder: (_) => [
+                    for (final entrada in {
+                      OrdenNotas.modificadas: 'Última modificación',
+                      OrdenNotas.creadas: 'Creación más reciente',
+                      OrdenNotas.tituloAscendente: 'Título: A–Z',
+                      OrdenNotas.tituloDescendente: 'Título: Z–A',
+                    }.entries)
+                      CheckedPopupMenuItem(
+                        value: entrada.key,
+                        checked: c.ordenNotas == entrada.key,
+                        child: Text(t(entrada.value)),
+                      ),
+                  ],
+                ),
                 IconButton(
                   tooltip: t(
                     seleccionando ? 'Cancelar selección' : 'Seleccionar notas',

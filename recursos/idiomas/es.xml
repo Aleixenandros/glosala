@@ -196,7 +196,14 @@ Ctrl / Cmd + A: seleccionar todas las notas visibles
 Escape: cancelar la selección o cerrar el menú
 Mayús + F10: abrir las acciones del elemento enfocado
 En móvil, activa las casillas con Seleccionar notas.
-Exportar a… aparece al habilitar el plugin en Opciones → Plugins.</texto>
+Exportar a… aparece al habilitar el plugin en Opciones → Plugins.
+
+En el editor:
+Ctrl / Cmd + F: buscar en la nota
+Ctrl + H o Cmd + Alt + F: buscar y reemplazar
+F3 / Mayús + F3: siguiente / anterior coincidencia
+Las listas y citas se aplican a todas las líneas seleccionadas.
+Ordena o duplica notas desde el listado. En Opciones puedes añadir los nuevos ejemplos con humor.</texto>
   <texto clave="Exportar a…">Exportar a…</texto>
   <texto clave="Abrir nota">Abrir nota</texto>
   <texto clave="Acciones de {titulo}">Acciones de {titulo}</texto>
@@ -215,4 +222,31 @@ Exportar a… aparece al habilitar el plugin en Opciones → Plugins.</texto>
   <texto clave="Cancelar selección">Cancelar selección</texto>
   <texto clave="Acciones de la selección">Acciones de la selección</texto>
   <texto clave="Seleccionar {titulo}">Seleccionar {titulo}</texto>
+  <texto clave="Ordenar notas">Ordenar notas</texto>
+  <texto clave="Última modificación">Última modificación</texto>
+  <texto clave="Creación más reciente">Creación más reciente</texto>
+  <texto clave="Título: A–Z">Título: A–Z</texto>
+  <texto clave="Título: Z–A">Título: Z–A</texto>
+  <texto clave="Duplicar">Duplicar</texto>
+  <texto clave="{cantidad} notas duplicadas.">{cantidad} notas duplicadas.</texto>
+  <texto clave="Buscar en esta nota">Buscar en esta nota</texto>
+  <texto clave="Buscar en esta nota (Ctrl/Cmd+F)">Buscar en esta nota (Ctrl/Cmd+F)</texto>
+  <texto clave="Distinguir mayúsculas">Distinguir mayúsculas</texto>
+  <texto clave="Cerrar búsqueda">Cerrar búsqueda</texto>
+  <texto clave="{actual} de {total}">{actual} de {total}</texto>
+  <texto clave="Coincidencia anterior">Coincidencia anterior</texto>
+  <texto clave="Coincidencia siguiente">Coincidencia siguiente</texto>
+  <texto clave="Reemplazar">Reemplazar</texto>
+  <texto clave="Reemplazar por">Reemplazar por</texto>
+  <texto clave="Reemplazar coincidencia">Reemplazar coincidencia</texto>
+  <texto clave="Reemplazar todas">Reemplazar todas</texto>
+  <texto clave="Rehacer">Rehacer</texto>
+  <texto clave="Lista numerada">Lista numerada</texto>
+  <texto clave="Elemento">Elemento</texto>
+  <texto clave="Una idea para recordar">Una idea para recordar</texto>
+  <texto clave="código">código</texto>
+  <texto clave="texto">texto</texto>
+  <texto clave="Notas de ejemplo">Notas de ejemplo</texto>
+  <texto clave="Añadir notas de ejemplo">Añadir notas de ejemplo</texto>
+  <texto clave="Añade tres notas con ejemplos de Markdown y un toque de Chiquito Ipsum.">Añade tres notas con ejemplos de Markdown y un toque de Chiquito Ipsum.</texto>
 </idioma>

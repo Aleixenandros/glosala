@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glosala/aplicacion/controlador_boveda.dart';
+import 'package:glosala/dominio/nota.dart';
 
 import 'soporte/repositorio_memoria.dart';
 
@@ -204,6 +205,105 @@ void main() {
       expect(controlador.notaPorId(primera.id)!.titulo, 'Lote A (2)');
       expect(controlador.notaPorId(tercera.id)!.carpeta, '');
       expect(controlador.notaPorId(tercera.id)!.favorita, isFalse);
+    },
+  );
+  test(
+    'La ordenación respeta acentos, conserva la selección y persiste',
+    () async {
+      controlador.aplicarSincronizacion([
+        for (final (indice, titulo) in ['Zeta', 'Ñu', 'Álamo', 'nube'].indexed)
+          Nota(
+            id: 'orden-$indice',
+            titulo: titulo,
+            contenido: '',
+            creadaEl: DateTime(2026, 1, indice + 1),
+            modificadaEl: DateTime(2026, 1, 4 - indice),
+          ),
+      ], []);
+      expect(controlador.notasVisibles.first.titulo, 'Zeta');
+      controlador.marcarNota('orden-0');
+      controlador.cambiarOrdenNotas(OrdenNotas.tituloAscendente);
+      expect(controlador.notasVisibles.map((nota) => nota.titulo), [
+        'Álamo',
+        'nube',
+        'Ñu',
+        'Zeta',
+      ]);
+      expect(controlador.notasMarcadas.single.id, 'orden-0');
+      controlador.cambiarOrdenNotas(OrdenNotas.creadas);
+      expect(controlador.notasVisibles.first.titulo, 'nube');
+      controlador.cambiarOrdenNotas(OrdenNotas.tituloDescendente);
+      await controlador.guardarPendientes();
+      final reabierto = ControladorBoveda(repositorio);
+      await reabierto.inicializar();
+      expect(reabierto.ordenNotas, OrdenNotas.tituloDescendente);
+      expect(reabierto.notasVisibles.map((nota) => nota.titulo), [
+        'Zeta',
+        'Ñu',
+        'nube',
+        'Álamo',
+      ]);
+      reabierto.dispose();
+    },
+  );
+
+  test(
+    'Duplicar un lote crea copias independientes con títulos únicos',
+    () async {
+      final primera = controlador.crearNota(
+        titulo: 'Proyecto',
+        contenido: '[[Destino]]',
+        enCarpeta: 'Trabajo',
+      );
+      controlador.alternarFavorita(primera.id);
+      final segunda = controlador.crearNota(
+        titulo: 'Proyecto',
+        contenido: 'Dos',
+      );
+      final papelera = controlador.crearNota(titulo: 'Eliminada');
+      controlador.enviarPapelera(papelera.id);
+      final copias = controlador.duplicarNotas([
+        primera.id,
+        primera.id,
+        segunda.id,
+        papelera.id,
+      ]);
+      expect(copias, hasLength(2));
+      expect(copias.first.titulo, 'Proyecto (3)');
+      expect(copias.first.carpeta, 'Trabajo');
+      expect(copias.first.favorita, isTrue);
+      expect(
+        controlador.notasMarcadas.map((nota) => nota.id),
+        unorderedEquals(copias.map((nota) => nota.id)),
+      );
+      controlador.actualizarContenido(copias.first.id, 'Copia editada');
+      await controlador.guardarPendientes();
+      expect(controlador.notaPorId(primera.id)!.contenido, '[[Destino]]');
+      expect(
+        repositorio.guardada!.notas.map((nota) => nota.id).toSet().length,
+        controlador.notas.length,
+      );
+    },
+  );
+
+  test(
+    'Añadir ejemplos conserva las notas existentes y enlaza las nuevas copias',
+    () {
+      final existentes = {
+        for (final nota in controlador.notas) nota.id: nota.aJson(),
+      };
+      controlador.anadirNotasEjemplo();
+      final nuevas = controlador.notas
+          .where((nota) => !existentes.containsKey(nota.id))
+          .toList();
+      expect(nuevas, hasLength(3));
+      for (final anterior in existentes.entries) {
+        expect(controlador.notaPorId(anterior.key)!.aJson(), anterior.value);
+      }
+      final titulos = nuevas.map((nota) => nota.titulo).toSet();
+      for (final nota in nuevas) {
+        expect(titulos.containsAll(nota.enlaces), isTrue);
+      }
     },
   );
 }

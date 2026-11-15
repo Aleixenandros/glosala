@@ -196,7 +196,14 @@ Ctrl / Cmd + A : sélectionner toutes les notes visibles
 Échap : annuler la sélection ou fermer le menu
 Maj + F10 : ouvrir les actions de l’élément ciblé
 Sur mobile, activez les cases avec Sélectionner des notes.
-Exporter en… apparaît lorsque le plugin est activé dans Options → Plugins.</texto>
+Exporter en… apparaît lorsque le plugin est activé dans Options → Plugins.
+
+Dans l’éditeur :
+Ctrl / Cmd + F : rechercher dans la note
+Ctrl + H ou Cmd + Alt + F : rechercher et remplacer
+F3 / Maj + F3 : résultat suivant / précédent
+Les listes et citations s’appliquent à toutes les lignes sélectionnées.
+Triez ou dupliquez les notes depuis la liste. Ajoutez les nouveaux exemples humoristiques dans Options.</texto>
   <texto clave="Exportar a…">Exporter en…</texto>
   <texto clave="Abrir nota">Ouvrir la note</texto>
   <texto clave="Acciones de {titulo}">Actions pour {titulo}</texto>
@@ -215,4 +222,31 @@ Exporter en… apparaît lorsque le plugin est activé dans Options → Plugins.
   <texto clave="Cancelar selección">Annuler la sélection</texto>
   <texto clave="Acciones de la selección">Actions sur la sélection</texto>
   <texto clave="Seleccionar {titulo}">Sélectionner {titulo}</texto>
+  <texto clave="Ordenar notas">Trier les notes</texto>
+  <texto clave="Última modificación">Dernière modification</texto>
+  <texto clave="Creación más reciente">Création la plus récente</texto>
+  <texto clave="Título: A–Z">Titre : A–Z</texto>
+  <texto clave="Título: Z–A">Titre : Z–A</texto>
+  <texto clave="Duplicar">Dupliquer</texto>
+  <texto clave="{cantidad} notas duplicadas.">{cantidad} notes dupliquées.</texto>
+  <texto clave="Buscar en esta nota">Rechercher dans cette note</texto>
+  <texto clave="Buscar en esta nota (Ctrl/Cmd+F)">Rechercher dans cette note (Ctrl/Cmd+F)</texto>
+  <texto clave="Distinguir mayúsculas">Respecter la casse</texto>
+  <texto clave="Cerrar búsqueda">Fermer la recherche</texto>
+  <texto clave="{actual} de {total}">{actual} sur {total}</texto>
+  <texto clave="Coincidencia anterior">Résultat précédent</texto>
+  <texto clave="Coincidencia siguiente">Résultat suivant</texto>
+  <texto clave="Reemplazar">Remplacer</texto>
+  <texto clave="Reemplazar por">Remplacer par</texto>
+  <texto clave="Reemplazar coincidencia">Remplacer le résultat</texto>
+  <texto clave="Reemplazar todas">Tout remplacer</texto>
+  <texto clave="Rehacer">Rétablir</texto>
+  <texto clave="Lista numerada">Liste numérotée</texto>
+  <texto clave="Elemento">Élément</texto>
+  <texto clave="Una idea para recordar">Une idée à retenir</texto>
+  <texto clave="código">code</texto>
+  <texto clave="texto">texte</texto>
+  <texto clave="Notas de ejemplo">Notes d’exemple</texto>
+  <texto clave="Añadir notas de ejemplo">Ajouter des notes d’exemple</texto>
+  <texto clave="Añade tres notas con ejemplos de Markdown y un toque de Chiquito Ipsum.">Ajoutez trois notes avec des exemples Markdown et une touche de Chiquito Ipsum.</texto>
 </idioma>

@@ -17,7 +17,8 @@ Para Android, conecta un dispositivo o inicia un emulador y ejecuta `flutter run
 
 ## Funcionalidades
 
-- **Notas:** editor Markdown, lectura y vista dividida en pantallas amplias; guardado automático, búsqueda, carpetas lógicas, favoritas, etiquetas, pestañas y papelera reversible.
+- **Notas:** editor Markdown, lectura y vista dividida en pantallas amplias; guardado automático, búsqueda, carpetas lógicas, favoritas, etiquetas, pestañas y papelera reversible. Ordenación por modificación, creación o título, guardada entre sesiones; duplicación de notas individuales o selecciones con títulos únicos.
+- **Edición:** búsqueda literal dentro de la nota, resaltado, navegación y reemplazo individual o completo. Deshacer/Rehacer con historial acotado de la nota abierta; formato de listas, tareas, citas y encabezados sobre todas las líneas seleccionadas.
 - **Conexiones:** `[[Título]]`, `[[Título|alias]]`, enlaces entrantes y mapa interactivo. Al renombrar una nota se actualizan sus enlaces internos.
 - **Tareas:** tareas y subtareas anidadas, edición, eliminación con confirmación y filtros. Completar una tarea completa sus subtareas; los padres reflejan el estado de sus hijas.
 - **Idiomas:** español, inglés, francés, alemán y portugués. Selector en Opciones y editor XML con validación, importación y exportación. El contenido de las notas conserva su idioma original.
@@ -27,6 +28,10 @@ Para Android, conecta un dispositivo o inicia un emulador y ejecuta `flutter run
 - **Selección múltiple:** Ctrl/Cmd + clic, Mayús + clic para rangos o casillas. Permite mover, marcar favoritas, enviar a la papelera, restaurar y exportar las notas seleccionadas. «Seleccionar todas» respeta la búsqueda y la carpeta visibles. Con el foco en el listado, Ctrl/Cmd+A selecciona todas y Escape limpia la selección; Mayús+F10 abre el menú contextual.
 - **Plugins:** activación en **Opciones → Plugins**. Al habilitar Exportación de notas, el menú de cada nota o selección ofrece **Exportar a… → Markdown, HTML, PDF u ODS**. Varias notas en Markdown se reúnen en un ZIP.
 - **Acerca de:** versión, repositorio, licencias y comprobación de actualizaciones en GitHub Releases.
+
+## Editor y ejemplos
+
+Consulta [los atajos y herramientas del editor](documentacion/editor.md). Las notas de bienvenida combinan ejemplos de Markdown con un toque de [Chiquito Ipsum](https://www.chiquitoipsum.com/). Desde **Opciones → Notas de ejemplo → Añadir notas de ejemplo** puedes incorporarlas a una bóveda existente. Se crean copias con identificadores y títulos nuevos, conservando las notas que ya tenías y conectando los ejemplos entre sí.
 
 ## Persistencia
 

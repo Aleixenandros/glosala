@@ -102,6 +102,22 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
         SingleActivator(LogicalKeyboardKey.keyP, control: true):
             _aperturaRapida,
         SingleActivator(LogicalKeyboardKey.keyP, meta: true): _aperturaRapida,
+        if (_modulo == 'notas' &&
+            !c.mapaVisible &&
+            c.notaSeleccionada != null) ...{
+          SingleActivator(LogicalKeyboardKey.keyF, control: true): () =>
+              _editor.currentState?.abrirBusqueda(),
+          SingleActivator(LogicalKeyboardKey.keyF, meta: true): () =>
+              _editor.currentState?.abrirBusqueda(),
+          SingleActivator(LogicalKeyboardKey.keyH, control: true): () =>
+              _editor.currentState?.abrirBusqueda(reemplazar: true),
+          SingleActivator(LogicalKeyboardKey.keyF, meta: true, alt: true): () =>
+              _editor.currentState?.abrirBusqueda(reemplazar: true),
+          SingleActivator(LogicalKeyboardKey.f3): () =>
+              _editor.currentState?.siguienteCoincidencia(),
+          SingleActivator(LogicalKeyboardKey.f3, shift: true): () =>
+              _editor.currentState?.siguienteCoincidencia(anterior: true),
+        },
         SingleActivator(LogicalKeyboardKey.keyS, control: true): () =>
             unawaited(c.guardarPendientes()),
         SingleActivator(LogicalKeyboardKey.keyS, meta: true): () =>
@@ -590,7 +606,10 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
   Widget _panelModulo() => switch (_modulo) {
     'tareas' => PanelTareas(controlador: c),
     'sincronizacion' => PanelSincronizacion(controlador: c),
-    'opciones' => PanelOpciones(controlador: c),
+    'opciones' => PanelOpciones(
+      controlador: c,
+      alAbrirNotas: () => _cambiarModulo('notas'),
+    ),
     'acerca' => PanelAcerca(),
     _ => _estadoVacio(context),
   };
@@ -742,6 +761,17 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
           ),
       ],
       if (!enPapelera) ...[
+        MenuItemButton(
+          leadingIcon: const Icon(Icons.copy_outlined, size: 18),
+          onPressed: () {
+            final copias = c.duplicarNotas(ids);
+            if (copias.length == 1) _estructura.currentState?.closeDrawer();
+            _mensaje(
+              t('{cantidad} notas duplicadas.', {'cantidad': copias.length}),
+            );
+          },
+          child: Text(t('Duplicar')),
+        ),
         MenuItemButton(
           leadingIcon: const Icon(Icons.drive_file_move_outline, size: 18),
           onPressed: () => _moverNotas(notas),

@@ -2,6 +2,10 @@
 
 ## Sin publicar
 
+- Ordenación persistente del listado por modificación, creación o título; duplicación individual y por lotes.
+- Buscar y reemplazar en la nota con resaltado, mayúsculas opcionales y navegación entre coincidencias.
+- Deshacer/Rehacer acotado a la nota abierta; listas, tareas, citas y encabezados sobre selecciones de varias líneas.
+- Notas de ejemplo con humor de Chiquito Ipsum y carga desde Opciones sin sobrescribir contenido existente.
 - Menús contextuales de notas y carpetas mediante botón derecho, pulsación larga o botón de opciones.
 - Selección múltiple con Ctrl/Cmd, Mayús y casillas; acciones por lote y exportación de la selección.
 - Atajos de menú contextual y selección total limitados al listado, respetando los atajos del editor.

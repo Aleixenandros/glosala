@@ -10,8 +10,13 @@ import '../../idiomas/gestor_idiomas.dart';
 import 'panel_plugins.dart';
 
 class PanelOpciones extends StatefulWidget {
-  const PanelOpciones({super.key, required this.controlador});
+  const PanelOpciones({
+    super.key,
+    required this.controlador,
+    required this.alAbrirNotas,
+  });
   final ControladorBoveda controlador;
+  final VoidCallback alAbrirNotas;
   @override
   State<PanelOpciones> createState() => _EstadoPanelOpciones();
 }
@@ -274,6 +279,28 @@ class _EstadoPanelOpciones extends State<PanelOpciones> {
             padding: const EdgeInsets.only(top: 16),
             child: SelectableText(_mensaje!),
           ),
+        const SizedBox(height: 28),
+        const Divider(),
+        const SizedBox(height: 22),
+        Text(
+          t('Notas de ejemplo'),
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          t(
+            'Añade tres notas con ejemplos de Markdown y un toque de Chiquito Ipsum.',
+          ),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          icon: const Icon(Icons.auto_stories_outlined),
+          label: Text(t('Añadir notas de ejemplo')),
+          onPressed: () {
+            c.anadirNotasEjemplo();
+            widget.alAbrirNotas();
+          },
+        ),
         const SizedBox(height: 28),
         const Divider(),
         const SizedBox(height: 22),

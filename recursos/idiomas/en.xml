@@ -196,7 +196,14 @@ Ctrl / Cmd + A: select all visible notes
 Escape: clear the selection or close the menu
 Shift + F10: open actions for the focused item
 On mobile, enable checkboxes with Select notes.
-Export to… appears when the plugin is enabled in Settings → Plugins.</texto>
+Export to… appears when the plugin is enabled in Settings → Plugins.
+
+In the editor:
+Ctrl / Cmd + F: find in the note
+Ctrl + H or Cmd + Alt + F: find and replace
+F3 / Shift + F3: next / previous match
+Lists and quotes apply to all selected lines.
+Sort or duplicate notes from the list. Add the new humorous samples in Settings.</texto>
   <texto clave="Exportar a…">Export to…</texto>
   <texto clave="Abrir nota">Open note</texto>
   <texto clave="Acciones de {titulo}">Actions for {titulo}</texto>
@@ -215,4 +222,31 @@ Export to… appears when the plugin is enabled in Settings → Plugins.</texto>
   <texto clave="Cancelar selección">Clear selection</texto>
   <texto clave="Acciones de la selección">Selection actions</texto>
   <texto clave="Seleccionar {titulo}">Select {titulo}</texto>
+  <texto clave="Ordenar notas">Sort notes</texto>
+  <texto clave="Última modificación">Last modified</texto>
+  <texto clave="Creación más reciente">Newest created</texto>
+  <texto clave="Título: A–Z">Title: A–Z</texto>
+  <texto clave="Título: Z–A">Title: Z–A</texto>
+  <texto clave="Duplicar">Duplicate</texto>
+  <texto clave="{cantidad} notas duplicadas.">{cantidad} notes duplicated.</texto>
+  <texto clave="Buscar en esta nota">Find in this note</texto>
+  <texto clave="Buscar en esta nota (Ctrl/Cmd+F)">Find in this note (Ctrl/Cmd+F)</texto>
+  <texto clave="Distinguir mayúsculas">Match case</texto>
+  <texto clave="Cerrar búsqueda">Close search</texto>
+  <texto clave="{actual} de {total}">{actual} of {total}</texto>
+  <texto clave="Coincidencia anterior">Previous match</texto>
+  <texto clave="Coincidencia siguiente">Next match</texto>
+  <texto clave="Reemplazar">Replace</texto>
+  <texto clave="Reemplazar por">Replace with</texto>
+  <texto clave="Reemplazar coincidencia">Replace match</texto>
+  <texto clave="Reemplazar todas">Replace all</texto>
+  <texto clave="Rehacer">Redo</texto>
+  <texto clave="Lista numerada">Numbered list</texto>
+  <texto clave="Elemento">Item</texto>
+  <texto clave="Una idea para recordar">An idea to remember</texto>
+  <texto clave="código">code</texto>
+  <texto clave="texto">text</texto>
+  <texto clave="Notas de ejemplo">Sample notes</texto>
+  <texto clave="Añadir notas de ejemplo">Add sample notes</texto>
+  <texto clave="Añade tres notas con ejemplos de Markdown y un toque de Chiquito Ipsum.">Add three notes with Markdown examples and a touch of Chiquito Ipsum.</texto>
 </idioma>

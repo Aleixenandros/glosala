@@ -15,6 +15,8 @@ enum EstadoGuardado { guardado, guardando, error }
 
 enum ModoEditor { editar, dividir, leer }
 
+enum OrdenNotas { modificadas, creadas, tituloAscendente, tituloDescendente }
+
 class ControladorBoveda extends ChangeNotifier {
   ControladorBoveda(this.repositorio);
 
@@ -30,6 +32,16 @@ class ControladorBoveda extends ChangeNotifier {
   Map<String, dynamic> get preferencias => Map.unmodifiable(_preferencias);
   bool get exportacionHabilitada =>
       _preferencias['plugin_exportacion'] as bool? ?? true;
+  OrdenNotas get ordenNotas =>
+      OrdenNotas.values
+          .where((orden) => orden.name == _preferencias['orden_notas'])
+          .firstOrNull ??
+      OrdenNotas.modificadas;
+
+  void cambiarOrdenNotas(OrdenNotas orden) {
+    _idAnclaSeleccion = null;
+    configurar('orden_notas', orden.name);
+  }
 
   void configurar(String clave, dynamic valor) {
     _preferencias[clave] = valor;
@@ -194,18 +206,65 @@ class ControladorBoveda extends ChangeNotifier {
 
   List<Nota> get notasVisibles {
     final palabras = busqueda.toLowerCase().trim().split(RegExp(r'\s+'));
-    return _notas.where((nota) {
+    final visibles = _notas.where((nota) {
       if (nota.eliminada != (filtro == FiltroNotas.papelera)) return false;
       if (filtro == FiltroNotas.favoritas && !nota.favorita) return false;
       if (carpeta != null && nota.carpeta != carpeta) return false;
       if (tag != null && !nota.etiquetas.contains(tag)) return false;
       final textoBuscable = '${nota.titulo}\n${nota.contenido}'.toLowerCase();
       return palabras.every(textoBuscable.contains);
-    }).toList()..sort((a, b) {
-      final order = b.modificadaEl.compareTo(a.modificadaEl);
-      return order != 0 ? order : a.titulo.compareTo(b.titulo);
+    }).toList();
+    final orden = ordenNotas;
+    final titulos = {
+      for (final nota in visibles) nota.id: _claveTitulo(nota.titulo),
+    };
+    return visibles..sort((a, b) {
+      final comparacion = switch (orden) {
+        OrdenNotas.modificadas => b.modificadaEl.compareTo(a.modificadaEl),
+        OrdenNotas.creadas => b.creadaEl.compareTo(a.creadaEl),
+        OrdenNotas.tituloAscendente => titulos[a.id]!.compareTo(titulos[b.id]!),
+        OrdenNotas.tituloDescendente => titulos[b.id]!.compareTo(
+          titulos[a.id]!,
+        ),
+      };
+      if (comparacion != 0) return comparacion;
+      final titulo = titulos[a.id]!.compareTo(titulos[b.id]!);
+      return titulo != 0 ? titulo : a.id.compareTo(b.id);
     });
   }
+
+  static const _letrasOrden = {
+    'á': 'a',
+    'à': 'a',
+    'â': 'a',
+    'ä': 'a',
+    'ã': 'a',
+    'å': 'a',
+    'é': 'e',
+    'è': 'e',
+    'ê': 'e',
+    'ë': 'e',
+    'í': 'i',
+    'ì': 'i',
+    'î': 'i',
+    'ï': 'i',
+    'ó': 'o',
+    'ò': 'o',
+    'ô': 'o',
+    'ö': 'o',
+    'õ': 'o',
+    'ú': 'u',
+    'ù': 'u',
+    'û': 'u',
+    'ü': 'u',
+    'ç': 'c',
+    'ñ': 'n\uffff',
+  };
+  static final _acentosOrden = RegExp('[${_letrasOrden.keys.join()}]');
+  String _claveTitulo(String titulo) => titulo.toLowerCase().replaceAllMapped(
+    _acentosOrden,
+    (coincidencia) => _letrasOrden[coincidencia[0]]!,
+  );
 
   List<Nota> enlacesEntrantes(Nota destino) => notasActivas
       .where(
@@ -353,6 +412,70 @@ class ControladorBoveda extends ChangeNotifier {
     } else if (titulo.trim().isNotEmpty) {
       crearNota(titulo: titulo.trim());
     }
+  }
+
+  List<Nota> duplicarNotas(Iterable<String> ids) {
+    final seleccion = ids.toSet();
+    final originales = notasActivas
+        .where((nota) => seleccion.contains(nota.id))
+        .toList();
+    final nuevas = <Nota>[];
+    final ahora = DateTime.now();
+    for (final original in originales) {
+      final copia = Nota(
+        id: const Uuid().v4(),
+        titulo: _tituloUnico(original.titulo),
+        contenido: original.contenido,
+        carpeta: original.carpeta,
+        favorita: original.favorita,
+        creadaEl: ahora,
+        modificadaEl: ahora,
+      );
+      _notas.add(copia);
+      nuevas.add(copia);
+    }
+    if (nuevas.isEmpty) return nuevas;
+    filtro = FiltroNotas.todas;
+    carpeta = null;
+    tag = null;
+    busqueda = '';
+    mapaVisible = false;
+    _idsMarcadas.clear();
+    if (nuevas.length > 1) _idsMarcadas.addAll(nuevas.map((nota) => nota.id));
+    _idAnclaSeleccion = nuevas.first.id;
+    _idSeleccionada = nuevas.first.id;
+    _idsAbiertas.add(nuevas.first.id);
+    modoEditor = ModoEditor.editar;
+    _cambio();
+    return nuevas;
+  }
+
+  void anadirNotasEjemplo() {
+    final ejemplos = bovedaBienvenida().notas;
+    final nuevas = <Nota>[];
+    final titulos = <String, String>{};
+    for (final ejemplo in ejemplos) {
+      final nueva = crearNota(
+        titulo: ejemplo.titulo,
+        contenido: ejemplo.contenido,
+        enCarpeta: ejemplo.carpeta,
+      );
+      titulos[ejemplo.titulo] = nueva.titulo;
+      nuevas.add(nueva);
+    }
+    for (final nota in nuevas) {
+      var contenido = nota.contenido;
+      for (final entrada in titulos.entries) {
+        contenido = SintaxisEnlaceInterno.renombrarDestino(
+          contenido,
+          entrada.key,
+          entrada.value,
+        );
+      }
+      actualizarContenido(nota.id, contenido);
+    }
+    seleccionarNota(nuevas.first.id);
+    cambiarModoEditor(ModoEditor.leer);
   }
 
   void actualizarContenido(String id, String contenido) {

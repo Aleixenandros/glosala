@@ -5,6 +5,12 @@ import '../../idiomas/gestor_idiomas.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../edicion/controlador_texto_nota.dart';
+import '../edicion/operaciones_markdown.dart';
+import '../edicion/historial_edicion.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../aplicacion/controlador_boveda.dart';
@@ -29,65 +35,350 @@ class EditorNota extends StatefulWidget {
 }
 
 class EstadoEditorNota extends State<EditorNota> {
-  late final TextEditingController _texto;
+  late ControladorTextoNota _texto;
+  late HistorialEdicion _historial;
+  bool _restaurandoHistorial = false;
+  final _campoEdicion = GlobalKey();
+  final _consulta = TextEditingController();
+  final _reemplazo = TextEditingController();
+  final _focoBusqueda = FocusNode();
+  bool _buscarVisible = false;
+  bool _mostrarReemplazo = false;
+  bool _distinguirMayusculas = false;
+  int _coincidencia = 0;
+  late String _ultimoContenido;
   final _foco = FocusNode();
   final _desplazamientoEditor = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _texto = TextEditingController(text: widget.nota.contenido);
+    _prepararTexto();
+  }
+
+  void _prepararTexto() {
+    _ultimoContenido = widget.nota.contenido;
+    _texto = ControladorTextoNota(text: _ultimoContenido);
+    _texto.buscar(
+      _buscarVisible ? _consulta.text : '',
+      distinguirMayusculas: _distinguirMayusculas,
+    );
+    _texto.selection = const TextSelection.collapsed(offset: 0);
+    _historial = HistorialEdicion(_texto.value);
+    _texto.addListener(_alEditarTexto);
+  }
+
+  void _alEditarTexto() {
+    if (!_restaurandoHistorial) _historial.registrar(_texto.value);
+    if (_texto.text == _ultimoContenido) return;
+    _ultimoContenido = _texto.text;
+    if (!widget.nota.eliminada) {
+      widget.controller.actualizarContenido(widget.nota.id, _texto.text);
+    }
+    if (_buscarVisible && mounted) setState(() => _coincidencia = 0);
   }
 
   @override
   void didUpdateWidget(covariant EditorNota oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_texto.text != widget.nota.contenido) {
-      final offset = oldWidget.nota.id == widget.nota.id
-          ? _texto.selection.baseOffset.clamp(0, widget.nota.contenido.length)
-          : 0;
+    if (oldWidget.nota.id != widget.nota.id) {
+      final anterior = _texto;
+      final historialAnterior = _historial;
+      anterior.removeListener(_alEditarTexto);
+      _prepararTexto();
+      _coincidencia = 0;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        anterior.dispose();
+        historialAnterior.dispose();
+        if (mounted && _desplazamientoEditor.hasClients) {
+          _desplazamientoEditor.jumpTo(0);
+        }
+      });
+    } else if (_texto.text != widget.nota.contenido) {
+      // Los cambios externos reinician la base del historial de esta nota.
+      _historial.separarGrupo();
+      _ultimoContenido = widget.nota.contenido;
+      final offset = _texto.selection.baseOffset.clamp(
+        0,
+        _ultimoContenido.length,
+      );
+      _restaurandoHistorial = true;
       _texto.value = TextEditingValue(
-        text: widget.nota.contenido,
+        text: _ultimoContenido,
         selection: TextSelection.collapsed(offset: offset),
       );
-      if (oldWidget.nota.id != widget.nota.id &&
-          _desplazamientoEditor.hasClients) {
-        _desplazamientoEditor.jumpTo(0);
-      }
+      _restaurandoHistorial = false;
+      final historialAnterior = _historial;
+      _historial = HistorialEdicion(_texto.value);
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => historialAnterior.dispose(),
+      );
+      _coincidencia = 0;
     }
   }
 
   @override
   void dispose() {
+    _texto.removeListener(_alEditarTexto);
     _texto.dispose();
+    _historial.dispose();
+    _consulta.dispose();
+    _reemplazo.dispose();
+    _focoBusqueda.dispose();
     _foco.dispose();
     _desplazamientoEditor.dispose();
     super.dispose();
   }
 
-  void format(String before, String after, String placeholder) {
+  void format(String apertura, String cierre, String relleno) {
+    _aplicar(
+      OperacionesMarkdown.rodear(_texto.value, apertura, cierre, t(relleno)),
+    );
+  }
+
+  void _formatearLineas(FormatoLinea formato, String relleno) {
+    _aplicar(
+      OperacionesMarkdown.formatearLineas(_texto.value, formato, t(relleno)),
+    );
+  }
+
+  void _aplicar(TextEditingValue valor, {bool enfocar = true}) {
     if (widget.nota.eliminada) return;
     if (widget.controller.modoEditor == ModoEditor.leer) {
       widget.controller.cambiarModoEditor(ModoEditor.editar);
     }
-    final selection = _texto.selection;
-    final start = selection.isValid ? selection.start : _texto.text.length;
-    final end = selection.isValid ? selection.end : start;
-    final selected = start == end
-        ? placeholder
-        : _texto.text.substring(start, end);
-    final replacement = '$before$selected$after';
-    _texto.value = TextEditingValue(
-      text: _texto.text.replaceRange(start, end, replacement),
-      selection: TextSelection(
-        baseOffset: start + before.length,
-        extentOffset: start + before.length + selected.length,
+    _historial.separarGrupo();
+    _texto.value = valor;
+    _historial.separarGrupo();
+    if (enfocar) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _foco.requestFocus();
+      });
+    }
+  }
+
+  void _restaurarEdicion({bool rehacer = false}) {
+    if (widget.nota.eliminada) return;
+    final valor = rehacer ? _historial.rehacer() : _historial.deshacer();
+    if (valor == null) return;
+    _restaurandoHistorial = true;
+    _texto.value = valor;
+    _restaurandoHistorial = false;
+  }
+
+  void abrirBusqueda({bool reemplazar = false}) {
+    if (!_buscarVisible &&
+        _texto.selection.isValid &&
+        !_texto.selection.isCollapsed) {
+      final seleccion = _texto.selection.textInside(_texto.text);
+      if (!seleccion.contains('\n') && seleccion.length <= 200) {
+        _consulta.text = seleccion;
+      }
+    }
+    _texto.buscar(_consulta.text, distinguirMayusculas: _distinguirMayusculas);
+    if (!widget.nota.eliminada) {
+      widget.controller.cambiarModoEditor(ModoEditor.editar);
+    }
+    setState(() {
+      _buscarVisible = true;
+      _mostrarReemplazo =
+          !widget.nota.eliminada && (reemplazar || _mostrarReemplazo);
+      _coincidencia = 0;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focoBusqueda.requestFocus();
+        _seleccionarCoincidencia(0);
+      }
+    });
+  }
+
+  void _cerrarBusqueda() {
+    _texto.buscar('', distinguirMayusculas: _distinguirMayusculas);
+    setState(() {
+      _buscarVisible = false;
+      _mostrarReemplazo = false;
+    });
+    _foco.requestFocus();
+  }
+
+  void _actualizarBusqueda() {
+    _texto.buscar(_consulta.text, distinguirMayusculas: _distinguirMayusculas);
+    setState(() => _coincidencia = 0);
+    _seleccionarCoincidencia(0);
+  }
+
+  void siguienteCoincidencia({bool anterior = false}) {
+    if (!_buscarVisible) {
+      abrirBusqueda();
+      return;
+    }
+    _seleccionarCoincidencia(_coincidencia + (anterior ? -1 : 1));
+  }
+
+  void _seleccionarCoincidencia(int indice) {
+    final coincidencias = _texto.coincidencias;
+    if (coincidencias.isEmpty) return;
+    setState(() => _coincidencia = indice % coincidencias.length);
+    final rango = coincidencias[_coincidencia];
+    _texto.selection = TextSelection(
+      baseOffset: rango.start,
+      extentOffset: rango.end,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // EditableText expone el desplazamiento exacto al cursor, también con líneas largas.
+      void visitar(Element elemento) {
+        if (elemento is StatefulElement &&
+            elemento.state is EditableTextState) {
+          (elemento.state as EditableTextState).bringIntoView(
+            TextPosition(offset: rango.start.clamp(0, _texto.text.length)),
+          );
+        } else {
+          elemento.visitChildElements(visitar);
+        }
+      }
+
+      _campoEdicion.currentContext?.visitChildElements(visitar);
+    });
+  }
+
+  void _reemplazarCoincidencias({bool todas = false}) {
+    if (widget.nota.eliminada || _texto.coincidencias.isEmpty) return;
+    final coincidencias = _texto.coincidencias;
+    final actual =
+        coincidencias[_coincidencia.clamp(0, coincidencias.length - 1)];
+    var contenido = _texto.text;
+    if (todas) {
+      // Recorrer desde el final conserva las posiciones y trata el reemplazo literalmente.
+      for (final rango in coincidencias.reversed) {
+        contenido = contenido.replaceRange(
+          rango.start,
+          rango.end,
+          _reemplazo.text,
+        );
+      }
+    } else {
+      contenido = contenido.replaceRange(
+        actual.start,
+        actual.end,
+        _reemplazo.text,
+      );
+    }
+    final fin =
+        (todas ? coincidencias.first.start : actual.start) +
+        _reemplazo.text.length;
+    _aplicar(
+      TextEditingValue(
+        text: contenido,
+        selection: TextSelection.collapsed(offset: fin),
+      ),
+      enfocar: false,
+    );
+    final siguientes = _texto.coincidencias;
+    final indice = siguientes.indexWhere((rango) => rango.start >= fin);
+    _seleccionarCoincidencia(indice < 0 ? 0 : indice);
+  }
+
+  Widget _barraBusqueda() {
+    final coincidencias = _texto.coincidencias;
+    final hayCoincidencias = coincidencias.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  key: const Key('buscar-en-nota'),
+                  controller: _consulta,
+                  focusNode: _focoBusqueda,
+                  decoration: InputDecoration(
+                    hintText: t('Buscar en esta nota'),
+                  ),
+                  onChanged: (_) => _actualizarBusqueda(),
+                  onSubmitted: (_) => siguienteCoincidencia(),
+                ),
+              ),
+              IconButton(
+                tooltip: t('Distinguir mayúsculas'),
+                isSelected: _distinguirMayusculas,
+                icon: const Icon(Icons.text_fields, size: 18),
+                onPressed: () {
+                  _distinguirMayusculas = !_distinguirMayusculas;
+                  _actualizarBusqueda();
+                },
+              ),
+              IconButton(
+                tooltip: t('Cerrar búsqueda'),
+                icon: const Icon(Icons.close, size: 18),
+                onPressed: _cerrarBusqueda,
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  t('{actual} de {total}', {
+                    'actual': hayCoincidencias
+                        ? _coincidencia.clamp(0, coincidencias.length - 1) + 1
+                        : 0,
+                    'total': coincidencias.length,
+                  }),
+                  style: const TextStyle(fontSize: 11),
+                ),
+              ),
+              IconButton(
+                tooltip: t('Coincidencia anterior'),
+                icon: const Icon(Icons.keyboard_arrow_up),
+                onPressed: hayCoincidencias
+                    ? () => siguienteCoincidencia(anterior: true)
+                    : null,
+              ),
+              IconButton(
+                tooltip: t('Coincidencia siguiente'),
+                icon: const Icon(Icons.keyboard_arrow_down),
+                onPressed: hayCoincidencias ? siguienteCoincidencia : null,
+              ),
+              if (!widget.nota.eliminada)
+                TextButton(
+                  onPressed: () =>
+                      setState(() => _mostrarReemplazo = !_mostrarReemplazo),
+                  child: Text(t('Reemplazar')),
+                ),
+            ],
+          ),
+          if (_mostrarReemplazo && !widget.nota.eliminada)
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    key: const Key('reemplazar-en-nota'),
+                    controller: _reemplazo,
+                    decoration: InputDecoration(hintText: t('Reemplazar por')),
+                    onSubmitted: (_) => _reemplazarCoincidencias(),
+                  ),
+                ),
+                IconButton(
+                  tooltip: t('Reemplazar coincidencia'),
+                  icon: const Icon(Icons.find_replace, size: 18),
+                  onPressed: hayCoincidencias ? _reemplazarCoincidencias : null,
+                ),
+                IconButton(
+                  tooltip: t('Reemplazar todas'),
+                  icon: const Icon(Icons.done_all, size: 18),
+                  onPressed: hayCoincidencias
+                      ? () => _reemplazarCoincidencias(todas: true)
+                      : null,
+                ),
+              ],
+            ),
+        ],
       ),
     );
-    widget.controller.actualizarContenido(widget.nota.id, _texto.text);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _foco.requestFocus();
-    });
   }
 
   void irAEncabezado(int offset) {
@@ -119,11 +410,11 @@ class EstadoEditorNota extends State<EditorNota> {
       builder: (context, constraints) {
         final compacto = constraints.maxWidth < 580;
         final mode = nota.eliminada
-            ? ModoEditor.leer
+            ? (_buscarVisible ? ModoEditor.editar : ModoEditor.leer)
             : c.modoEditor == ModoEditor.dividir && constraints.maxWidth < 700
             ? ModoEditor.editar
             : c.modoEditor;
-        return Column(
+        final contenido = Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
@@ -185,6 +476,11 @@ class EstadoEditorNota extends State<EditorNota> {
                       compacto,
                     ),
                   ],
+                  IconButton(
+                    tooltip: t('Buscar en esta nota (Ctrl/Cmd+F)'),
+                    icon: const Icon(Icons.search, size: 18),
+                    onPressed: abrirBusqueda,
+                  ),
                   SizedBox(width: 5),
                   MenuContextual(
                     descripcion: t('Opciones de la nota'),
@@ -204,7 +500,8 @@ class EstadoEditorNota extends State<EditorNota> {
                   ),
                 ],
               ),
-            if (mode != ModoEditor.leer)
+            if (_buscarVisible) _barraBusqueda(),
+            if (mode != ModoEditor.leer && !nota.eliminada)
               SizedBox(
                 height: 43,
                 child: SingleChildScrollView(
@@ -212,6 +509,27 @@ class EstadoEditorNota extends State<EditorNota> {
                   padding: EdgeInsets.symmetric(horizontal: 18),
                   child: Row(
                     children: [
+                      ValueListenableBuilder<UndoHistoryValue>(
+                        valueListenable: _historial,
+                        builder: (context, valor, _) => Row(
+                          children: [
+                            IconButton(
+                              tooltip: t('Deshacer'),
+                              icon: const Icon(Icons.undo, size: 18),
+                              onPressed: valor.canUndo
+                                  ? _restaurarEdicion
+                                  : null,
+                            ),
+                            IconButton(
+                              tooltip: t('Rehacer'),
+                              icon: const Icon(Icons.redo, size: 18),
+                              onPressed: valor.canRedo
+                                  ? () => _restaurarEdicion(rehacer: true)
+                                  : null,
+                            ),
+                          ],
+                        ),
+                      ),
                       _botonFormato(
                         Icons.format_bold,
                         'Negrita (Ctrl/Cmd+B)',
@@ -226,33 +544,35 @@ class EstadoEditorNota extends State<EditorNota> {
                         '*',
                         'texto',
                       ),
-                      _botonFormato(
+                      _botonLineas(
                         Icons.title,
                         'Encabezado',
-                        '\n## ',
-                        '',
+                        FormatoLinea.encabezado,
                         'Encabezado',
                       ),
                       SizedBox(height: 18, child: VerticalDivider(width: 20)),
-                      _botonFormato(
+                      _botonLineas(
                         Icons.format_list_bulleted,
                         'Lista',
-                        '\n- ',
-                        '',
+                        FormatoLinea.lista,
                         'Elemento',
                       ),
-                      _botonFormato(
+                      _botonLineas(
+                        Icons.format_list_numbered,
+                        'Lista numerada',
+                        FormatoLinea.listaNumerada,
+                        'Elemento',
+                      ),
+                      _botonLineas(
                         Icons.check_box_outlined,
                         'Tarea',
-                        '\n- [ ] ',
-                        '',
+                        FormatoLinea.tarea,
                         'Tarea',
                       ),
-                      _botonFormato(
+                      _botonLineas(
                         Icons.format_quote,
                         'Cita',
-                        '\n> ',
-                        '',
+                        FormatoLinea.cita,
                         'Una idea para recordar',
                       ),
                       _botonFormato(Icons.code, 'Código', '`', '`', 'código'),
@@ -317,6 +637,18 @@ class EstadoEditorNota extends State<EditorNota> {
             ),
           ],
         );
+        final minimo = _buscarVisible ? 520.0 : 320.0;
+        return CallbackShortcuts(
+          bindings: {
+            if (_buscarVisible)
+              const SingleActivator(LogicalKeyboardKey.escape): _cerrarBusqueda,
+          },
+          child: constraints.maxHeight >= minimo
+              ? contenido
+              : SingleChildScrollView(
+                  child: SizedBox(height: minimo, child: contenido),
+                ),
+        );
       },
     );
   }
@@ -379,6 +711,18 @@ class EstadoEditorNota extends State<EditorNota> {
     visualDensity: VisualDensity.compact,
   );
 
+  Widget _botonLineas(
+    IconData icono,
+    String etiqueta,
+    FormatoLinea formato,
+    String relleno,
+  ) => IconButton(
+    tooltip: t(etiqueta),
+    icon: Icon(icono, size: 18),
+    onPressed: () => _formatearLineas(formato, relleno),
+    visualDensity: VisualDensity.compact,
+  );
+
   Widget _titulo(BuildContext context) => Row(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -416,44 +760,90 @@ class EstadoEditorNota extends State<EditorNota> {
   );
 
   Widget _panelEdicion(BuildContext context) => Padding(
+    key: _campoEdicion,
     padding: EdgeInsets.fromLTRB(26, 24, 26, 10),
     child: Column(
       children: [
         _titulo(context),
         SizedBox(height: 22),
         Expanded(
-          child: TextField(
-            key: Key('markdown-editor'),
-            controller: _texto,
-            focusNode: _foco,
-            scrollController: _desplazamientoEditor,
-            expands: true,
-            minLines: null,
-            maxLines: null,
-            textAlignVertical: TextAlignVertical.top,
-            keyboardType: TextInputType.multiline,
-            autocorrect: false,
-            enableSuggestions: false,
-            smartDashesType: SmartDashesType.disabled,
-            smartQuotesType: SmartQuotesType.disabled,
-            style: TextStyle(
-              fontFamily: 'JetBrainsMono',
-              fontSize: 13,
-              height: 1.85,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-            decoration: InputDecoration(
-              hintText: t(
-                'Empieza a escribir…\n\nUsa # para títulos y [[ para conectar ideas.',
+          child: KeyedSubtree(
+            key: ValueKey('edicion-${widget.nota.id}'),
+            child: CallbackShortcuts(
+              // En web algunos atajos se delegan al navegador. El historial de
+              // la nota debe recibirlos también después de un reemplazo.
+              bindings: {
+                const SingleActivator(LogicalKeyboardKey.keyZ, control: true):
+                    _restaurarEdicion,
+                const SingleActivator(LogicalKeyboardKey.keyZ, meta: true):
+                    _restaurarEdicion,
+                const SingleActivator(
+                  LogicalKeyboardKey.keyZ,
+                  control: true,
+                  shift: true,
+                ): () =>
+                    _restaurarEdicion(rehacer: true),
+                const SingleActivator(
+                  LogicalKeyboardKey.keyZ,
+                  meta: true,
+                  shift: true,
+                ): () =>
+                    _restaurarEdicion(rehacer: true),
+                const SingleActivator(
+                  LogicalKeyboardKey.keyY,
+                  control: true,
+                ): () =>
+                    _restaurarEdicion(rehacer: true),
+              },
+              child: Actions(
+                actions: {
+                  UndoTextIntent: CallbackAction<UndoTextIntent>(
+                    onInvoke: (_) {
+                      _restaurarEdicion();
+                      return null;
+                    },
+                  ),
+                  RedoTextIntent: CallbackAction<RedoTextIntent>(
+                    onInvoke: (_) {
+                      _restaurarEdicion(rehacer: true);
+                      return null;
+                    },
+                  ),
+                },
+                child: TextField(
+                  key: Key('markdown-editor'),
+                  readOnly: widget.nota.eliminada,
+                  controller: _texto,
+                  focusNode: _foco,
+                  scrollController: _desplazamientoEditor,
+                  expands: true,
+                  minLines: null,
+                  maxLines: null,
+                  textAlignVertical: TextAlignVertical.top,
+                  keyboardType: TextInputType.multiline,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  smartDashesType: SmartDashesType.disabled,
+                  smartQuotesType: SmartQuotesType.disabled,
+                  style: TextStyle(
+                    fontFamily: 'JetBrainsMono',
+                    fontSize: 13,
+                    height: 1.85,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: t(
+                      'Empieza a escribir…\n\nUsa # para títulos y [[ para conectar ideas.',
+                    ),
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
               ),
-              filled: false,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
             ),
-            onChanged: (value) =>
-                widget.controller.actualizarContenido(widget.nota.id, value),
           ),
         ),
       ],
