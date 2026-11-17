@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Glosala
+Comment=Markdown notes and connected ideas
+Comment[es]=Notas Markdown e ideas conectadas
+Exec=glosala
+Icon=glosala
+Terminal=false
+Categories=Office;Utility;TextEditor;
+StartupWMClass=app.glosala.glosala

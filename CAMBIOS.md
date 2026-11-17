@@ -1,5 +1,11 @@
 # Historial de cambios
 
+## [0.2.1] — 2026-11-18
+
+- Instaladores DEB y RPM para Linux, MSI y EXE para Windows, y DMG y PKG para macOS, además de los paquetes portables.
+- Accesos de lanzamiento y dependencias declaradas en Linux; runtime de Visual C++ incluido en Windows.
+- CI comprueba instalación y desinstalación, y exige todos los formatos antes de preparar una Release.
+
 ## [0.2.0] — 2026-11-17
 
 - Adjuntos de imágenes, audio, vídeo, documentos y otros archivos desde el editor; visor, reproductor y descarga del original. Copias locales verificadas, sincronización conservando conflictos y exportaciones ZIP con archivos y enlaces portables.

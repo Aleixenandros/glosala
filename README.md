@@ -72,14 +72,16 @@ Los workflows se inspiran en la separación entre validación y compilación de 
 
 | Plataforma | Artefacto |
 | --- | --- |
-| Linux x64 | Archivo tar.gz con el ejecutable y sus bibliotecas |
-| Windows x64 | ZIP con la aplicación completa |
-| macOS | ZIP de la aplicación, sin notarización |
+| Linux x64 | Instaladores `.deb` y `.rpm`, y portable `.tar.gz` |
+| Windows x64 | Instaladores `.msi` y `.exe`, y portable `.zip` |
+| macOS | Imagen `.dmg`, instalador `.pkg` y aplicación `.zip`, sin notarización |
 | Android | APK de pruebas, firmado con clave de desarrollo |
 | iOS | ZIP de la aplicación sin firmar; no instalable directamente |
 | Web | ZIP de los archivos estáticos y motor local |
 
 Las etiquetas `v*` repiten las verificaciones y crean un **borrador** de GitHub Release con artefactos y SHA-256. La etiqueta debe coincidir con `pubspec.yaml` y `CAMBIOS.md`. No se publican versiones automáticamente ni se suben aplicaciones a tiendas. Consulta [distribución](documentacion/notas_distribucion.md).
+
+Desde 0.2.1, el CI exige los doce paquetes y prueba los instaladores: DEB en Ubuntu, RPM en Fedora, MSI/EXE en Windows y DMG/PKG en macOS. Las pruebas de desinstalación conservan los datos de las notas. El `.exe` es un asistente que incluye el mismo MSI; ambos instalan la aplicación completa y el runtime de Visual C++.
 
 ## Organización
 

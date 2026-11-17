@@ -8,6 +8,8 @@ permissions:
 
 env:
   FLUTTER_VERSION: '3.50.0'
+  WIX_VERSION: '5.0.2'
+  DOTNET_ROLL_FORWARD: Major
 
 jobs:
   verificar:
@@ -29,6 +31,8 @@ jobs:
         run: flutter analyze --fatal-infos
       - name: Validar catálogos y versión
         run: python3 herramientas/verificar_proyecto.py
+      - name: Probar herramientas de distribución
+        run: python3 -m unittest discover -s herramientas -p '*_test.py' -v
       - name: Ejecutar pruebas
         run: flutter test --coverage
       - name: Guardar cobertura
@@ -77,7 +81,23 @@ jobs:
         if: matrix.plataforma == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libstdc++-12-dev libmpv-dev
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libstdc++-12-dev libmpv-dev dpkg-dev rpm desktop-file-utils xvfb xauth
+      - name: Preparar instaladores de Windows
+        if: matrix.plataforma == 'windows'
+        shell: pwsh
+        run: |
+          $herramientas = Join-Path $env:RUNNER_TEMP 'glosala-wix'
+          dotnet tool install wix --version $env:WIX_VERSION --tool-path $herramientas
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $wix = Join-Path $herramientas 'wix.exe'
+          & $wix extension add -g "WixToolset.UI.wixext/$env:WIX_VERSION" "WixToolset.Bal.wixext/$env:WIX_VERSION"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $herramientas >> $env:GITHUB_PATH
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+          $visualStudio = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $runtime = Get-ChildItem "$visualStudio/VC/Redist/MSVC/*/x64/Microsoft.VC*.CRT" -Directory | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $runtime) { throw 'No se ha encontrado el runtime x64 de Visual C++' }
+          "GLOSALA_VC_REDIST=$($runtime.FullName)" >> $env:GITHUB_ENV
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -89,6 +109,19 @@ jobs:
         run: ${{ matrix.comando }}
       - name: Empaquetar aplicación completa
         run: python herramientas/empaquetar.py ${{ matrix.plataforma }}
+      - name: Comprobar paquetes esperados
+        run: python herramientas/verificar_paquetes.py ${{ matrix.plataforma }}
+      - name: Instalar, abrir y desinstalar MSI y EXE
+        if: matrix.plataforma == 'windows'
+        shell: pwsh
+        run: ./herramientas/probar_instaladores_windows.ps1
+      - name: Comprobar instalación de escritorio Unix
+        if: matrix.plataforma == 'linux' || matrix.plataforma == 'macos'
+        run: python3 herramientas/probar_instaladores_unix.py ${{ matrix.plataforma }}
+      - name: Instalar y desinstalar RPM en Fedora
+        if: matrix.plataforma == 'linux'
+        run: |
+          docker run --rm -v "$PWD/distribucion:/paquetes:ro" -v "$PWD/herramientas/probar_rpm.sh:/probar_rpm.sh:ro" fedora:44 bash /probar_rpm.sh
       - name: Guardar paquete
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:

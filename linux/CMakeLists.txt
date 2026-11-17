@@ -74,6 +74,10 @@ set_target_properties(${BINARY_NAME}
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+# file_picker usa JNI únicamente en Android. Su implementación Linux usa el
+# selector del escritorio; no distribuir el puente Java arrastrado por Android.
+list(REMOVE_ITEM PLUGIN_BUNDLED_LIBRARIES "$<TARGET_FILE:jni>")
+
 # MediaKit recomienda el mismo asignador para el reproductor y la aplicación.
 target_link_libraries(${BINARY_NAME} PRIVATE ${MIMALLOC_LIB})
 

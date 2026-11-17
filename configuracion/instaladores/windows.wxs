@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal">
+  <!-- El EXE instala el mismo MSI, con su reparación y desinstalación. -->
+  <Bundle Name="Glosala" Version="$(var.Version)" Manufacturer="Aleixenandros"
+          UpgradeCode="256b9b6a-cc70-4858-82d4-07bfc599f226" IconSourceFile="$(var.Icono)">
+    <BootstrapperApplication>
+      <bal:WixStandardBootstrapperApplication Theme="hyperlinkLicense"
+          LicenseUrl="" SuppressOptionsUI="yes" />
+    </BootstrapperApplication>
+    <Chain>
+      <MsiPackage SourceFile="$(var.Paquete)" Visible="no" />
+    </Chain>
+  </Bundle>
+</Wix>

@@ -32,6 +32,7 @@ jobs:
           merge-multiple: true
       - name: Calcular integridad de los paquetes
         run: |
+          python3 herramientas/verificar_paquetes.py todos
           cd distribucion
           sha256sum -- * > SHA256SUMS.txt
       - name: Crear borrador único
