@@ -116,7 +116,16 @@ class ServicioSincronizacion {
         baseCarpetas,
         mezcla.notas,
       );
-      final compartida = Boveda(notas: mezcla.notas, carpetas: carpetas);
+      final adjuntos = {
+        for (final adjunto in [...controlador.adjuntos, ...remoto.adjuntos])
+          adjunto.id: adjunto,
+      }.values.toList();
+      ControladorBoveda.validarTamanoAdjuntos(adjuntos);
+      final compartida = Boveda(
+        notas: mezcla.notas,
+        carpetas: carpetas,
+        adjuntos: adjuntos,
+      );
       // Escribir remotamente antes de aplicar; un 412 no modifica la bóveda local.
       await transporte.escribir(
         jsonEncode(compartida.aJson()),
@@ -132,7 +141,11 @@ class ServicioSincronizacion {
         carpetasAnteriores,
         posteriores.notas,
       );
-      controlador.aplicarSincronizacion(posteriores.notas, carpetasPosteriores);
+      controlador.aplicarSincronizacion(
+        posteriores.notas,
+        carpetasPosteriores,
+        adjuntos: adjuntos,
+      );
       controlador.configurar(claveCarpetas, carpetas);
       controlador.configurar(clave, {
         for (final nota in mezcla.notas) nota.id: huellaNota(nota),

@@ -144,7 +144,7 @@ Prueba otra búsqueda o crea una nueva.</texto>
   <texto clave="Sin guardar">Sin guardar</texto>
   <texto clave="Sincronización">Sincronización</texto>
   <texto clave="Sincronización completada. Conflictos conservados: {cantidad}">Sincronización completada. Conflictos conservados: {cantidad}</texto>
-  <texto clave="Sincronización manual de notas y carpetas. Los conflictos se conservan como copias.">Sincronización manual de notas y carpetas. Los conflictos se conservan como copias.</texto>
+  <texto clave="Sincronización manual de notas, carpetas y adjuntos. Los conflictos se conservan como copias.">Sincronización manual de notas, carpetas y adjuntos. Los conflictos se conservan como copias.</texto>
   <texto clave="Sincronizando…">Sincronizando…</texto>
   <texto clave="Sincronizar ahora">Sincronizar ahora</texto>
   <texto clave="Sistema">Sistema</texto>
@@ -203,7 +203,10 @@ Ctrl / Cmd + F: buscar en la nota
 Ctrl + H o Cmd + Alt + F: buscar y reemplazar
 F3 / Mayús + F3: siguiente / anterior coincidencia
 Las listas y citas se aplican a todas las líneas seleccionadas.
-Ordena o duplica notas desde el listado. En Opciones puedes añadir los nuevos ejemplos con humor.</texto>
+Ordena o duplica notas desde el listado. En Opciones puedes añadir los nuevos ejemplos con humor.
+
+Ctrl / Cmd + Mayús + F: activar o salir del modo sin distracciones
+Escape: cerrar primero la búsqueda; después, salir del modo sin distracciones</texto>
   <texto clave="Exportar a…">Exportar a…</texto>
   <texto clave="Abrir nota">Abrir nota</texto>
   <texto clave="Acciones de {titulo}">Acciones de {titulo}</texto>
@@ -249,4 +252,39 @@ Ordena o duplica notas desde el listado. En Opciones puedes añadir los nuevos e
   <texto clave="Notas de ejemplo">Notas de ejemplo</texto>
   <texto clave="Añadir notas de ejemplo">Añadir notas de ejemplo</texto>
   <texto clave="Añade tres notas con ejemplos de Markdown y un toque de Chiquito Ipsum.">Añade tres notas con ejemplos de Markdown y un toque de Chiquito Ipsum.</texto>
+  <texto clave="Idiomas">Idiomas</texto>
+  <texto clave="Ocultar bóveda">Ocultar bóveda</texto>
+  <texto clave="Mostrar bóveda">Mostrar bóveda</texto>
+  <texto clave="Quitar filtro">Quitar filtro</texto>
+  <texto clave="Minimizar">Minimizar</texto>
+  <texto clave="Maximizar">Maximizar</texto>
+  <texto clave="Restaurar ventana">Restaurar ventana</texto>
+  <texto clave="Ajustar ancho de la bóveda">Ajustar ancho de la bóveda</texto>
+  <texto clave="Arrastra para ajustar el ancho. Doble clic para restablecer.">Arrastra para ajustar el ancho. Doble clic para restablecer.</texto>
+  <texto clave="Cerrar panel de detalles">Cerrar panel de detalles</texto>
+  <texto clave="Modo sin distracciones (Ctrl/Cmd+Mayús+F)">Modo sin distracciones (Ctrl/Cmd+Mayús+F)</texto>
+  <texto clave="Salir del modo sin distracciones (Esc)">Salir del modo sin distracciones (Esc)</texto>
+  <texto clave="Salir">Salir</texto>
+  <texto clave="Adjuntos">Adjuntos</texto>
+  <texto clave="Añadir archivos">Añadir archivos</texto>
+  <texto clave="Añade imágenes, vídeos, audio o documentos a esta nota.">Añade imágenes, vídeos, audio o documentos a esta nota.</texto>
+  <texto clave="Quitar de la nota">Quitar de la nota</texto>
+  <texto clave="Hasta 100 MB por archivo · 512 MB por bóveda">Hasta 100 MB por archivo · 512 MB por bóveda</texto>
+  <texto clave="El archivo supera el límite de 100 MB.">El archivo supera el límite de 100 MB.</texto>
+  <texto clave="La bóveda supera el límite de 512 MB de adjuntos.">La bóveda supera el límite de 512 MB de adjuntos.</texto>
+  <texto clave="No se han podido añadir los archivos.">No se han podido añadir los archivos.</texto>
+  <texto clave="No se puede reproducir este formato. Puedes guardar una copia y abrirla con otra aplicación.">No se puede reproducir este formato. Puedes guardar una copia y abrirla con otra aplicación.</texto>
+  <texto clave="No se ha podido abrir o guardar el archivo.">No se ha podido abrir o guardar el archivo.</texto>
+  <texto clave="No hay vista previa para este archivo.">No hay vista previa para este archivo.</texto>
+  <texto clave="Abre el documento con tu aplicación habitual o guarda una copia.">Abre el documento con tu aplicación habitual o guarda una copia.</texto>
+  <texto clave="Guardar una copia">Guardar una copia</texto>
+  <texto clave="Abrir PDF">Abrir PDF</texto>
+  <texto clave="Abrir en otra aplicación">Abrir en otra aplicación</texto>
+  <texto clave="Reproducir">Reproducir</texto>
+  <texto clave="Pausar">Pausar</texto>
+  <texto clave="Silenciar">Silenciar</texto>
+  <texto clave="Activar sonido">Activar sonido</texto>
+  <texto clave="Adjunto no disponible.">Adjunto no disponible.</texto>
+  <texto clave="Posición de reproducción">Posición de reproducción</texto>
+  <texto clave="Reproducir / Pausar">Reproducir / Pausar</texto>
 </idioma>

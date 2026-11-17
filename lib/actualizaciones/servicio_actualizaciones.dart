@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-const versionAplicacion = '0.1.0';
+const versionAplicacion = '0.2.0';
 const repositorioProyecto = 'https://github.com/Aleixenandros/glosala';
 
 class Actualizacion {

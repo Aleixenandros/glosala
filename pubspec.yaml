@@ -2,7 +2,7 @@ name: glosala
 description: "Un espacio local para tus notas Markdown y tus ideas conectadas."
 publish_to: 'none'
 
-version: 0.1.0+1
+version: 0.2.0+2
 
 environment:
   sdk: ^3.14.0
@@ -27,6 +27,13 @@ dependencies:
   archive: ^4.7.1
   xml: ^7.1.0
   crypto: ^3.0.8
+  window_manager: ^0.5.2
+  media_kit: ^1.2.6
+  media_kit_video: ^2.0.1
+  media_kit_libs_video: ^1.0.7
+  open_filex: ^5.0.0
+  mime: ^2.0.0
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

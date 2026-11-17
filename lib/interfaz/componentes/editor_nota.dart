@@ -16,15 +16,19 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../aplicacion/controlador_boveda.dart';
 import '../../dominio/nota.dart';
 import 'menu_contextual.dart';
+import 'dialogo_adjuntos.dart';
+import 'visor_adjunto.dart';
 
 class EditorNota extends StatefulWidget {
   const EditorNota({
     super.key,
+    this.sinDistracciones = false,
     required this.nota,
     required this.controller,
     required this.alRenombrar,
     required this.acciones,
   });
+  final bool sinDistracciones;
   final Nota nota;
   final ControladorBoveda controller;
   final VoidCallback alRenombrar;
@@ -128,6 +132,64 @@ class EstadoEditorNota extends State<EditorNota> {
     _foco.dispose();
     _desplazamientoEditor.dispose();
     super.dispose();
+  }
+
+  void enfocarContenido() {
+    if (_buscarVisible) {
+      _focoBusqueda.requestFocus();
+    } else if (widget.controller.modoEditor != ModoEditor.leer &&
+        !widget.nota.eliminada) {
+      _foco.requestFocus();
+    }
+  }
+
+  Future<void> abrirAdjuntos() async {
+    final id = widget.nota.id;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => DialogoAdjuntos(
+        controlador: widget.controller,
+        notaId: id,
+        alInsertar: (adjuntos) {
+          if (!mounted || widget.nota.id != id || widget.nota.eliminada) return;
+          widget.controller.registrarAdjuntos(adjuntos);
+          final seleccion = _texto.selection;
+          final inicio = seleccion.isValid
+              ? seleccion.start
+              : _texto.text.length;
+          final fin = seleccion.isValid ? seleccion.end : inicio;
+          final enlaces =
+              '\n\n${adjuntos.map((a) => a.markdown).join('\n\n')}\n\n';
+          _aplicar(
+            TextEditingValue(
+              text: _texto.text.replaceRange(inicio, fin, enlaces),
+              selection: TextSelection.collapsed(
+                offset: inicio + enlaces.length,
+              ),
+            ),
+            enfocar: false,
+          );
+        },
+        alQuitar: (adjunto) {
+          if (!mounted || widget.nota.id != id || widget.nota.eliminada) return;
+          final patron = RegExp(
+            r'!?\[(?:\\.|[^\]\\])*\]\(' + RegExp.escape(adjunto.enlace) + r'\)',
+          );
+          final texto = _texto.text
+              .replaceAll(patron, '')
+              .replaceAll(adjunto.enlace, adjunto.nombre);
+          _aplicar(
+            TextEditingValue(
+              text: texto,
+              selection: TextSelection.collapsed(
+                offset: _texto.selection.baseOffset.clamp(0, texto.length),
+              ),
+            ),
+            enfocar: false,
+          );
+        },
+      ),
+    );
   }
 
   void format(String apertura, String cierre, String relleno) {
@@ -406,250 +468,289 @@ class EstadoEditorNota extends State<EditorNota> {
     final c = widget.controller;
     final nota = widget.nota;
     final theme = Theme.of(context);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compacto = constraints.maxWidth < 580;
-        final mode = nota.eliminada
-            ? (_buscarVisible ? ModoEditor.editar : ModoEditor.leer)
-            : c.modoEditor == ModoEditor.dividir && constraints.maxWidth < 700
-            ? ModoEditor.editar
-            : c.modoEditor;
-        final contenido = Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: compacto ? 14 : 26,
-                vertical: 12,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: widget.sinDistracciones ? 860 : double.infinity,
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compacto = constraints.maxWidth < 580;
+            final mode = nota.eliminada
+                ? (_buscarVisible ? ModoEditor.editar : ModoEditor.leer)
+                : c.modoEditor == ModoEditor.dividir &&
+                      (widget.sinDistracciones || constraints.maxWidth < 700)
+                ? ModoEditor.editar
+                : c.modoEditor;
+            final contenido = Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (!widget.sinDistracciones)
+                  Padding(
+                    key: const Key('herramientas-nota'),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: compacto ? 14 : 26,
+                      vertical: 12,
+                    ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.folder_open_outlined,
-                          size: 14,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        SizedBox(width: 7),
                         Expanded(
-                          child: Text(
-                            nota.carpeta.isEmpty
-                                ? t('Mi bóveda')
-                                : nota.carpeta,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.folder_open_outlined,
+                                size: 14,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              SizedBox(width: 7),
+                              Expanded(
+                                child: Text(
+                                  nota.carpeta.isEmpty
+                                      ? t('Mi bóveda')
+                                      : nota.carpeta,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
+                        ),
+                        if (!nota.eliminada) ...[
+                          _botonModo(
+                            context,
+                            Icons.edit_outlined,
+                            'Editar',
+                            ModoEditor.editar,
+                            mode,
+                            compacto,
+                          ),
+                          if (constraints.maxWidth >= 700)
+                            _botonModo(
+                              context,
+                              Icons.vertical_split_outlined,
+                              'Dividir',
+                              ModoEditor.dividir,
+                              mode,
+                              compacto,
+                            ),
+                          _botonModo(
+                            context,
+                            Icons.chrome_reader_mode_outlined,
+                            'Leer',
+                            ModoEditor.leer,
+                            mode,
+                            compacto,
+                          ),
+                        ],
+                        IconButton(
+                          tooltip: t('Buscar en esta nota (Ctrl/Cmd+F)'),
+                          icon: const Icon(Icons.search, size: 18),
+                          onPressed: abrirBusqueda,
+                        ),
+                        IconButton(
+                          tooltip: t('Adjuntos'),
+                          onPressed: abrirAdjuntos,
+                          icon: Badge(
+                            isLabelVisible: nota.idsAdjuntos.isNotEmpty,
+                            label: Text('${nota.idsAdjuntos.length}'),
+                            child: const Icon(Icons.attach_file, size: 18),
+                          ),
+                        ),
+                        SizedBox(width: 5),
+                        MenuContextual(
+                          descripcion: t('Opciones de la nota'),
+                          acciones: widget.acciones,
                         ),
                       ],
                     ),
                   ),
-                  if (!nota.eliminada) ...[
-                    _botonModo(
-                      context,
-                      Icons.edit_outlined,
-                      'Editar',
-                      ModoEditor.editar,
-                      mode,
-                      compacto,
-                    ),
-                    if (constraints.maxWidth >= 700)
-                      _botonModo(
-                        context,
-                        Icons.vertical_split_outlined,
-                        'Dividir',
-                        ModoEditor.dividir,
-                        mode,
-                        compacto,
-                      ),
-                    _botonModo(
-                      context,
-                      Icons.chrome_reader_mode_outlined,
-                      'Leer',
-                      ModoEditor.leer,
-                      mode,
-                      compacto,
-                    ),
-                  ],
-                  IconButton(
-                    tooltip: t('Buscar en esta nota (Ctrl/Cmd+F)'),
-                    icon: const Icon(Icons.search, size: 18),
-                    onPressed: abrirBusqueda,
-                  ),
-                  SizedBox(width: 5),
-                  MenuContextual(
-                    descripcion: t('Opciones de la nota'),
-                    acciones: widget.acciones,
-                  ),
-                ],
-              ),
-            ),
-            Divider(),
-            if (nota.eliminada)
-              MaterialBanner(
-                content: Text(t('Esta nota está en la papelera.')),
-                actions: [
-                  TextButton(
-                    onPressed: () => c.restaurarNota(nota.id),
-                    child: Text(t('Restaurar')),
-                  ),
-                ],
-              ),
-            if (_buscarVisible) _barraBusqueda(),
-            if (mode != ModoEditor.leer && !nota.eliminada)
-              SizedBox(
-                height: 43,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: EdgeInsets.symmetric(horizontal: 18),
-                  child: Row(
-                    children: [
-                      ValueListenableBuilder<UndoHistoryValue>(
-                        valueListenable: _historial,
-                        builder: (context, valor, _) => Row(
-                          children: [
-                            IconButton(
-                              tooltip: t('Deshacer'),
-                              icon: const Icon(Icons.undo, size: 18),
-                              onPressed: valor.canUndo
-                                  ? _restaurarEdicion
-                                  : null,
-                            ),
-                            IconButton(
-                              tooltip: t('Rehacer'),
-                              icon: const Icon(Icons.redo, size: 18),
-                              onPressed: valor.canRedo
-                                  ? () => _restaurarEdicion(rehacer: true)
-                                  : null,
-                            ),
-                          ],
-                        ),
-                      ),
-                      _botonFormato(
-                        Icons.format_bold,
-                        'Negrita (Ctrl/Cmd+B)',
-                        '**',
-                        '**',
-                        'texto',
-                      ),
-                      _botonFormato(
-                        Icons.format_italic,
-                        'Cursiva (Ctrl/Cmd+I)',
-                        '*',
-                        '*',
-                        'texto',
-                      ),
-                      _botonLineas(
-                        Icons.title,
-                        'Encabezado',
-                        FormatoLinea.encabezado,
-                        'Encabezado',
-                      ),
-                      SizedBox(height: 18, child: VerticalDivider(width: 20)),
-                      _botonLineas(
-                        Icons.format_list_bulleted,
-                        'Lista',
-                        FormatoLinea.lista,
-                        'Elemento',
-                      ),
-                      _botonLineas(
-                        Icons.format_list_numbered,
-                        'Lista numerada',
-                        FormatoLinea.listaNumerada,
-                        'Elemento',
-                      ),
-                      _botonLineas(
-                        Icons.check_box_outlined,
-                        'Tarea',
-                        FormatoLinea.tarea,
-                        'Tarea',
-                      ),
-                      _botonLineas(
-                        Icons.format_quote,
-                        'Cita',
-                        FormatoLinea.cita,
-                        'Una idea para recordar',
-                      ),
-                      _botonFormato(Icons.code, 'Código', '`', '`', 'código'),
-                      _botonFormato(
-                        Icons.link,
-                        'Enlazar una nota',
-                        '[[',
-                        ']]',
-                        'Título de la nota',
+                if (!widget.sinDistracciones) Divider(),
+                if (nota.eliminada)
+                  MaterialBanner(
+                    content: Text(t('Esta nota está en la papelera.')),
+                    actions: [
+                      TextButton(
+                        onPressed: () => c.restaurarNota(nota.id),
+                        child: Text(t('Restaurar')),
                       ),
                     ],
                   ),
-                ),
-              ),
-            Expanded(
-              child: mode == ModoEditor.dividir
-                  ? Row(
-                      children: [
-                        Expanded(child: _panelEdicion(context)),
-                        VerticalDivider(width: 1),
-                        Expanded(child: _vistaPrevia(context, compacto)),
-                      ],
-                    )
-                  : mode == ModoEditor.leer
-                  ? _vistaPrevia(context, compacto)
-                  : _panelEdicion(context),
-            ),
-            Divider(),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 18, vertical: 9),
-              child: Row(
-                children: [
-                  Text(
-                    t('Markdown'),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  Spacer(),
-                  Text(
-                    t('{cantidad} palabras', {'cantidad': nota.numeroPalabras}),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  if (!compacto) ...[
-                    SizedBox(width: 18),
-                    Text(
-                      t('{cantidad} caracteres', {
-                        'cantidad': nota.contenido.characters.length,
-                      }),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: theme.colorScheme.onSurfaceVariant,
+                if (_buscarVisible) _barraBusqueda(),
+                if (!widget.sinDistracciones &&
+                    mode != ModoEditor.leer &&
+                    !nota.eliminada)
+                  SizedBox(
+                    height: 43,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: EdgeInsets.symmetric(horizontal: 18),
+                      child: Row(
+                        children: [
+                          ValueListenableBuilder<UndoHistoryValue>(
+                            valueListenable: _historial,
+                            builder: (context, valor, _) => Row(
+                              children: [
+                                IconButton(
+                                  tooltip: t('Deshacer'),
+                                  icon: const Icon(Icons.undo, size: 18),
+                                  onPressed: valor.canUndo
+                                      ? _restaurarEdicion
+                                      : null,
+                                ),
+                                IconButton(
+                                  tooltip: t('Rehacer'),
+                                  icon: const Icon(Icons.redo, size: 18),
+                                  onPressed: valor.canRedo
+                                      ? () => _restaurarEdicion(rehacer: true)
+                                      : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                          _botonFormato(
+                            Icons.format_bold,
+                            'Negrita (Ctrl/Cmd+B)',
+                            '**',
+                            '**',
+                            'texto',
+                          ),
+                          _botonFormato(
+                            Icons.format_italic,
+                            'Cursiva (Ctrl/Cmd+I)',
+                            '*',
+                            '*',
+                            'texto',
+                          ),
+                          _botonLineas(
+                            Icons.title,
+                            'Encabezado',
+                            FormatoLinea.encabezado,
+                            'Encabezado',
+                          ),
+                          SizedBox(
+                            height: 18,
+                            child: VerticalDivider(width: 20),
+                          ),
+                          _botonLineas(
+                            Icons.format_list_bulleted,
+                            'Lista',
+                            FormatoLinea.lista,
+                            'Elemento',
+                          ),
+                          _botonLineas(
+                            Icons.format_list_numbered,
+                            'Lista numerada',
+                            FormatoLinea.listaNumerada,
+                            'Elemento',
+                          ),
+                          _botonLineas(
+                            Icons.check_box_outlined,
+                            'Tarea',
+                            FormatoLinea.tarea,
+                            'Tarea',
+                          ),
+                          _botonLineas(
+                            Icons.format_quote,
+                            'Cita',
+                            FormatoLinea.cita,
+                            'Una idea para recordar',
+                          ),
+                          _botonFormato(
+                            Icons.code,
+                            'Código',
+                            '`',
+                            '`',
+                            'código',
+                          ),
+                          _botonFormato(
+                            Icons.link,
+                            'Enlazar una nota',
+                            '[[',
+                            ']]',
+                            'Título de la nota',
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        );
-        final minimo = _buscarVisible ? 520.0 : 320.0;
-        return CallbackShortcuts(
-          bindings: {
-            if (_buscarVisible)
-              const SingleActivator(LogicalKeyboardKey.escape): _cerrarBusqueda,
-          },
-          child: constraints.maxHeight >= minimo
-              ? contenido
-              : SingleChildScrollView(
-                  child: SizedBox(height: minimo, child: contenido),
+                  ),
+                Expanded(
+                  child: mode == ModoEditor.dividir
+                      ? Row(
+                          children: [
+                            Expanded(child: _panelEdicion(context)),
+                            VerticalDivider(width: 1),
+                            Expanded(child: _vistaPrevia(context, compacto)),
+                          ],
+                        )
+                      : mode == ModoEditor.leer
+                      ? _vistaPrevia(context, compacto)
+                      : _panelEdicion(context),
                 ),
-        );
-      },
+                if (!widget.sinDistracciones) Divider(),
+                if (!widget.sinDistracciones)
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+                    child: Row(
+                      children: [
+                        Text(
+                          t('Markdown'),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        Spacer(),
+                        Text(
+                          t('{cantidad} palabras', {
+                            'cantidad': nota.numeroPalabras,
+                          }),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        if (!compacto) ...[
+                          SizedBox(width: 18),
+                          Text(
+                            t('{cantidad} caracteres', {
+                              'cantidad': nota.contenido.characters.length,
+                            }),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+              ],
+            );
+            final minimo = _buscarVisible
+                ? 520.0
+                : widget.sinDistracciones
+                ? 180.0
+                : 320.0;
+            return CallbackShortcuts(
+              bindings: {
+                if (_buscarVisible)
+                  const SingleActivator(LogicalKeyboardKey.escape):
+                      _cerrarBusqueda,
+              },
+              child: constraints.maxHeight >= minimo
+                  ? contenido
+                  : SingleChildScrollView(
+                      child: SizedBox(height: minimo, child: contenido),
+                    ),
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -740,7 +841,7 @@ class EstadoEditorNota extends State<EditorNota> {
           ),
         ),
       ),
-      if (!widget.nota.eliminada)
+      if (!widget.sinDistracciones && !widget.nota.eliminada)
         IconButton(
           tooltip: t(
             widget.nota.favorita ? 'Quitar de favoritas' : 'Añadir a favoritas',
@@ -868,14 +969,15 @@ class EstadoEditorNota extends State<EditorNota> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _titulo(context),
-              SizedBox(height: 10),
-              Text(
-                '${_fecha(widget.nota.modificadaEl)}  ·  ${t('{cantidad} palabras', {'cantidad': widget.nota.numeroPalabras})}',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: color.onSurfaceVariant.withValues(alpha: .7),
+              if (!widget.sinDistracciones) SizedBox(height: 10),
+              if (!widget.sinDistracciones)
+                Text(
+                  '${_fecha(widget.nota.modificadaEl)}  ·  ${t('{cantidad} palabras', {'cantidad': widget.nota.numeroPalabras})}',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: color.onSurfaceVariant.withValues(alpha: .7),
+                  ),
                 ),
-              ),
               SizedBox(height: 30),
               if (widget.nota.contenido.trim().isEmpty)
                 Padding(
@@ -895,6 +997,40 @@ class EstadoEditorNota extends State<EditorNota> {
                 selectable: true,
                 extensionSet: md.ExtensionSet.gitHubFlavored,
                 inlineSyntaxes: [SintaxisEnlaceInterno()],
+                imageBuilder: (uri, titulo, alternativa) {
+                  if (uri.scheme == 'adjunto') {
+                    final adjunto = widget.controller.adjuntoPorId(uri.path);
+                    if (adjunto == null) {
+                      return Text(t('Adjunto no disponible.'));
+                    }
+                    return InkWell(
+                      onTap: () => mostrarAdjunto(context, adjunto),
+                      child: Image.memory(
+                        adjunto.bytes,
+                        fit: BoxFit.contain,
+                        semanticLabel: alternativa ?? adjunto.nombre,
+                        errorBuilder: (_, _, _) => TextButton.icon(
+                          onPressed: () => mostrarAdjunto(context, adjunto),
+                          icon: const Icon(Icons.image_outlined),
+                          label: Text(adjunto.nombre),
+                        ),
+                      ),
+                    );
+                  }
+                  if (uri.scheme == 'https' || uri.scheme == 'http') {
+                    return Image.network(
+                      uri.toString(),
+                      semanticLabel: alternativa,
+                      errorBuilder: (_, _, _) => Text(
+                        alternativa ??
+                            t('No hay vista previa para este archivo.'),
+                      ),
+                    );
+                  }
+                  return Text(
+                    alternativa ?? t('No hay vista previa para este archivo.'),
+                  );
+                },
                 onTapLink: (label, href, title) => _abrirEnlace(href),
                 styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
                   p: TextStyle(
@@ -970,6 +1106,15 @@ class EstadoEditorNota extends State<EditorNota> {
 
   Future<void> _abrirEnlace(String? href) async {
     if (href == null) return;
+    if (href.startsWith('adjunto:')) {
+      final adjunto = widget.controller.adjuntoPorId(href.substring(8));
+      if (adjunto == null) {
+        _mensaje('Adjunto no disponible.');
+      } else {
+        await mostrarAdjunto(context, adjunto);
+      }
+      return;
+    }
     if (href.startsWith('glosala:')) {
       widget.controller.abrirEnlaceInterno(
         Uri.decodeComponent(href.substring(8)),

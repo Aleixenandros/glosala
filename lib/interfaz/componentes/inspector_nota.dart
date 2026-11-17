@@ -14,7 +14,9 @@ class InspectorNota extends StatelessWidget {
     required this.controller,
     required this.nota,
     required this.alEncabezado,
+    this.alOcultar,
   });
+  final VoidCallback? alOcultar;
   final ControladorBoveda controller;
   final Nota nota;
   final ValueChanged<int> alEncabezado;
@@ -28,8 +30,20 @@ class InspectorNota extends StatelessWidget {
       child: ListView(
         padding: EdgeInsets.all(22),
         children: [
-          SizedBox(height: 9),
-          _encabezado('EN ESTA NOTA', Icons.subject_rounded),
+          Row(
+            children: [
+              Expanded(
+                child: _encabezado('EN ESTA NOTA', Icons.subject_rounded),
+              ),
+              if (alOcultar != null)
+                IconButton(
+                  tooltip: t('Cerrar panel de detalles'),
+                  onPressed: alOcultar,
+                  icon: const Icon(Icons.close, size: 16),
+                  visualDensity: VisualDensity.compact,
+                ),
+            ],
+          ),
           SizedBox(height: 20),
           if (nota.encabezados.isEmpty)
             _ayudaTexto('Los encabezados de tu nota aparecerán aquí.'),

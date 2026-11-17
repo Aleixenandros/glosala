@@ -156,6 +156,8 @@ void main() {
     await probador.tap(find.byTooltip('Opciones'));
     await probador.pumpAndSettle();
     expect(find.text('Plugins'), findsOneWidget);
+    await probador.tap(find.byKey(const Key('opciones-plugins')));
+    await probador.pumpAndSettle();
     expect(
       find
           .byType(ChoiceChip)
@@ -179,6 +181,8 @@ void main() {
     await probador.sendKeyEvent(LogicalKeyboardKey.escape);
     await probador.pumpAndSettle();
     await probador.tap(find.byTooltip('Opciones'));
+    await probador.pumpAndSettle();
+    await probador.tap(find.byKey(const Key('opciones-plugins')));
     await probador.pumpAndSettle();
     await probador.ensureVisible(interruptor);
     await probador.tap(interruptor);

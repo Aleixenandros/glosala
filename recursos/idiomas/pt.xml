@@ -144,7 +144,7 @@ Tenta outra pesquisa ou cria uma nota.</texto>
   <texto clave="Sin guardar">Por guardar</texto>
   <texto clave="Sincronización">Sincronização</texto>
   <texto clave="Sincronización completada. Conflictos conservados: {cantidad}">Sincronização concluída. Conflitos preservados: {cantidad}</texto>
-  <texto clave="Sincronización manual de notas y carpetas. Los conflictos se conservan como copias.">Sincronização manual de notas e pastas. Os conflitos são preservados como cópias.</texto>
+  <texto clave="Sincronización manual de notas, carpetas y adjuntos. Los conflictos se conservan como copias.">Sincronização manual de notas, pastas e anexos. Os conflitos são conservados como cópias.</texto>
   <texto clave="Sincronizando…">A sincronizar…</texto>
   <texto clave="Sincronizar ahora">Sincronizar agora</texto>
   <texto clave="Sistema">Sistema</texto>
@@ -203,7 +203,10 @@ Ctrl / Cmd + F: procurar na nota
 Ctrl + H ou Cmd + Alt + F: procurar e substituir
 F3 / Shift + F3: ocorrência seguinte / anterior
 As listas e citações aplicam-se a todas as linhas selecionadas.
-Ordene ou duplique notas na lista. Adicione os novos exemplos com humor em Opções.</texto>
+Ordene ou duplique notas na lista. Adicione os novos exemplos com humor em Opções.
+
+Ctrl / Cmd + Shift + F: ativar ou sair do modo sem distrações
+Escape: fechar primeiro a pesquisa; depois, sair do modo sem distrações</texto>
   <texto clave="Exportar a…">Exportar para…</texto>
   <texto clave="Abrir nota">Abrir nota</texto>
   <texto clave="Acciones de {titulo}">Ações de {titulo}</texto>
@@ -249,4 +252,39 @@ Ordene ou duplique notas na lista. Adicione os novos exemplos com humor em Opç�
   <texto clave="Notas de ejemplo">Notas de exemplo</texto>
   <texto clave="Añadir notas de ejemplo">Adicionar notas de exemplo</texto>
   <texto clave="Añade tres notas con ejemplos de Markdown y un toque de Chiquito Ipsum.">Adicione três notas com exemplos de Markdown e um toque de Chiquito Ipsum.</texto>
+  <texto clave="Idiomas">Idiomas</texto>
+  <texto clave="Ocultar bóveda">Ocultar cofre</texto>
+  <texto clave="Mostrar bóveda">Mostrar cofre</texto>
+  <texto clave="Quitar filtro">Remover filtro</texto>
+  <texto clave="Minimizar">Minimizar</texto>
+  <texto clave="Maximizar">Maximizar</texto>
+  <texto clave="Restaurar ventana">Restaurar janela</texto>
+  <texto clave="Ajustar ancho de la bóveda">Ajustar a largura do cofre</texto>
+  <texto clave="Arrastra para ajustar el ancho. Doble clic para restablecer.">Arraste para ajustar a largura. Clique duas vezes para repor.</texto>
+  <texto clave="Cerrar panel de detalles">Fechar painel de detalhes</texto>
+  <texto clave="Modo sin distracciones (Ctrl/Cmd+Mayús+F)">Modo sem distrações (Ctrl/Cmd+Shift+F)</texto>
+  <texto clave="Salir del modo sin distracciones (Esc)">Sair do modo sem distrações (Esc)</texto>
+  <texto clave="Salir">Sair</texto>
+  <texto clave="Adjuntos">Anexos</texto>
+  <texto clave="Añadir archivos">Adicionar ficheiros</texto>
+  <texto clave="Añade imágenes, vídeos, audio o documentos a esta nota.">Adiciona imagens, vídeos, áudio ou documentos a esta nota.</texto>
+  <texto clave="Quitar de la nota">Remover da nota</texto>
+  <texto clave="Hasta 100 MB por archivo · 512 MB por bóveda">Até 100 MB por ficheiro · 512 MB por cofre</texto>
+  <texto clave="El archivo supera el límite de 100 MB.">O ficheiro excede o limite de 100 MB.</texto>
+  <texto clave="La bóveda supera el límite de 512 MB de adjuntos.">O cofre excede o limite de 512 MB de anexos.</texto>
+  <texto clave="No se han podido añadir los archivos.">Não foi possível adicionar os ficheiros.</texto>
+  <texto clave="No se puede reproducir este formato. Puedes guardar una copia y abrirla con otra aplicación.">Não é possível reproduzir este formato. Podes guardar uma cópia e abri-la noutra aplicação.</texto>
+  <texto clave="No se ha podido abrir o guardar el archivo.">Não foi possível abrir ou guardar o ficheiro.</texto>
+  <texto clave="No hay vista previa para este archivo.">Não existe pré-visualização para este ficheiro.</texto>
+  <texto clave="Abre el documento con tu aplicación habitual o guarda una copia.">Abre o documento na tua aplicação habitual ou guarda uma cópia.</texto>
+  <texto clave="Guardar una copia">Guardar uma cópia</texto>
+  <texto clave="Abrir PDF">Abrir PDF</texto>
+  <texto clave="Abrir en otra aplicación">Abrir noutra aplicação</texto>
+  <texto clave="Reproducir">Reproduzir</texto>
+  <texto clave="Pausar">Pausar</texto>
+  <texto clave="Silenciar">Silenciar</texto>
+  <texto clave="Activar sonido">Ativar som</texto>
+  <texto clave="Adjunto no disponible.">Anexo indisponível.</texto>
+  <texto clave="Posición de reproducción">Posição de reprodução</texto>
+  <texto clave="Reproducir / Pausar">Reproduzir / Pausar</texto>
 </idioma>

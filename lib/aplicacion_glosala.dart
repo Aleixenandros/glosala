@@ -10,11 +10,14 @@ import 'aplicacion/controlador_boveda.dart';
 import 'datos/fabrica_repositorio.dart';
 import 'interfaz/tema_aplicacion.dart';
 import 'interfaz/pantalla_espacio.dart';
+import 'interfaz/ventana_escritorio.dart';
+import 'interfaz/componentes/controles_ventana.dart';
 import 'idiomas/gestor_idiomas.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) await BrowserContextMenu.disableContextMenu();
+  await VentanaEscritorio.instancia.inicializar();
   runApp(const InicioGlosala());
 }
 
@@ -76,7 +79,24 @@ class _EstadoInicioGlosala extends State<InicioGlosala> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: TemaAplicacion.build(Brightness.dark),
+      builder: (context, child) => BordeVentana(child: child!),
       home: Scaffold(
+        appBar: VentanaEscritorio.instancia.activa
+            ? AppBar(
+                toolbarHeight: 44,
+                title: const ZonaArrastreVentana(
+                  child: SizedBox(
+                    height: 44,
+                    width: double.infinity,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('Glosala'),
+                    ),
+                  ),
+                ),
+                actions: const [ControlesVentana()],
+              )
+            : null,
         body: Center(
           child: _error == null
               ? const CircularProgressIndicator()
@@ -112,6 +132,7 @@ class AplicacionGlosala extends StatelessWidget {
     builder: (context, _) => MaterialApp(
       title: 'Glosala',
       debugShowCheckedModeBanner: false,
+      builder: (context, child) => BordeVentana(child: child!),
       locale: Locale(GestorIdiomas.instancia.actual),
       supportedLocales: GestorIdiomas.disponibles.keys.map(Locale.new).toList(),
       localizationsDelegates: GlobalMaterialLocalizations.delegates,

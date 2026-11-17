@@ -1,7 +1,14 @@
 # Historial de cambios
 
-## Sin publicar
+## [0.2.0] — 2026-11-17
 
+- Adjuntos de imágenes, audio, vídeo, documentos y otros archivos desde el editor; visor, reproductor y descarga del original. Copias locales verificadas, sincronización conservando conflictos y exportaciones ZIP con archivos y enlaces portables.
+- Modo sin distracciones con nota centrada, cabecera mínima, botón y atajo Ctrl/Cmd+Mayús+F; Esc restaura la disposición anterior conservando selección e historial de edición.
+- Pestañas y nueva nota integradas en la cabecera de ventana, con desplazamiento a la pestaña activa.
+- Bóveda redimensionable con arrastre, teclado o doble clic para restablecer; ancho y visibilidad de las columnas conservados entre sesiones. Botón de cierre dentro del panel de detalles.
+- Columna de notas compacta y ocultable, carpetas y etiquetas plegables, sin accesos duplicados a ajustes.
+- Opciones dividida en apariencia, idiomas, bóveda local, plugins y acerca de, con sincronización al final.
+- Controles de ventana integrados en la cabecera de escritorio, arrastre, doble clic para maximizar y cierre que espera al guardado.
 - Ordenación persistente del listado por modificación, creación o título; duplicación individual y por lotes.
 - Buscar y reemplazar en la nota con resaltado, mayúsculas opcionales y navegación entre coincidencias.
 - Deshacer/Rehacer acotado a la nota abierta; listas, tareas, citas y encabezados sobre selecciones de varias líneas.

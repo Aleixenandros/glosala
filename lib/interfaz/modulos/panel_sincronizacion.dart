@@ -101,7 +101,7 @@ class _EstadoPanelSincronizacion extends State<PanelSincronizacion> {
       const SizedBox(height: 14),
       Text(
         t(
-          'Sincronización manual de notas y carpetas. Los conflictos se conservan como copias.',
+          'Sincronización manual de notas, carpetas y adjuntos. Los conflictos se conservan como copias.',
         ),
       ),
       const SizedBox(height: 25),

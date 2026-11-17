@@ -7,6 +7,7 @@ import '../datos/repositorio_boveda.dart';
 import '../datos/notas_bienvenida.dart';
 import '../dominio/nota.dart';
 import '../dominio/boveda.dart';
+import '../dominio/adjunto.dart';
 import '../dominio/tarea.dart';
 
 enum FiltroNotas { todas, favoritas, papelera }
@@ -116,7 +117,46 @@ class ControladorBoveda extends ChangeNotifier {
       ..addAll(resultado);
   }
 
-  void aplicarSincronizacion(List<Nota> notas, List<String> carpetas) {
+  final Map<String, Adjunto> _adjuntos = {};
+  List<Adjunto> get adjuntos => List.unmodifiable(_adjuntos.values);
+  Adjunto? adjuntoPorId(String id) => _adjuntos[id];
+  List<Adjunto> adjuntosDe(Nota nota) =>
+      nota.idsAdjuntos.map(adjuntoPorId).whereType<Adjunto>().toList();
+
+  void registrarAdjuntos(Iterable<Adjunto> nuevos) {
+    final todos = {
+      ..._adjuntos,
+      for (final adjunto in nuevos) adjunto.id: adjunto,
+    };
+    validarTamanoAdjuntos(todos.values);
+    _adjuntos
+      ..clear()
+      ..addAll(todos);
+    _cambio();
+  }
+
+  static void validarTamanoAdjuntos(Iterable<Adjunto> adjuntos) {
+    if (adjuntos.fold<int>(0, (total, a) => total + a.bytes.length) >
+        Adjunto.maximoBovedaBytes) {
+      throw const FormatException(
+        'La bóveda supera el límite de 512 MB de adjuntos.',
+      );
+    }
+  }
+
+  void aplicarSincronizacion(
+    List<Nota> notas,
+    List<String> carpetas, {
+    List<Adjunto> adjuntos = const [],
+  }) {
+    final todos = {
+      ..._adjuntos,
+      for (final adjunto in adjuntos) adjunto.id: adjunto,
+    };
+    validarTamanoAdjuntos(todos.values);
+    _adjuntos
+      ..clear()
+      ..addAll(todos);
     _notas
       ..clear()
       ..addAll(notas);
@@ -278,6 +318,7 @@ class ControladorBoveda extends ChangeNotifier {
 
   Boveda get instantanea => Boveda(
     notas: List.of(_notas),
+    adjuntos: adjuntos,
     carpetas: List.of(_carpetas),
     idSeleccionada: _idSeleccionada,
     modoOscuro: modoOscuro,
@@ -291,6 +332,9 @@ class ControladorBoveda extends ChangeNotifier {
     try {
       final almacenada = await repositorio.cargar();
       final boveda = almacenada ?? bovedaBienvenida();
+      _adjuntos
+        ..clear()
+        ..addEntries(boveda.adjuntos.map((a) => MapEntry(a.id, a)));
       _notas
         ..clear()
         ..addAll(boveda.notas);

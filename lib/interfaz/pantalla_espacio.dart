@@ -16,13 +16,16 @@ import 'componentes/vista_mapa.dart';
 import 'componentes/editor_nota.dart';
 import 'componentes/inspector_nota.dart';
 import 'componentes/panel_boveda.dart';
+import 'componentes/controles_ventana.dart';
+import 'componentes/cabecera_boveda.dart';
+import 'componentes/separador_panel.dart';
+import 'componentes/pestanas_notas.dart';
+import 'ventana_escritorio.dart';
 import '../idiomas/gestor_idiomas.dart';
 import 'modulos/panel_tareas.dart';
-import 'modulos/panel_sincronizacion.dart';
 import 'modulos/panel_opciones.dart';
 import '../dominio/nota.dart';
 import '../plugins/plugin_exportacion.dart';
-import 'modulos/panel_acerca.dart';
 
 class PantallaEspacio extends StatefulWidget {
   const PantallaEspacio({super.key, required this.controller});
@@ -37,19 +40,35 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
   final _estructura = GlobalKey<ScaffoldState>();
   final _editor = GlobalKey<EstadoEditorNota>();
   bool _inspector = true;
+  bool _bovedaVisible = true;
+  double _anchoBoveda = 256;
   bool _operacionArchivo = false;
+  bool _sinDistracciones = false;
   String _modulo = 'notas';
   ControladorBoveda get c => widget.controller;
+  bool get _concentracionActiva =>
+      _sinDistracciones &&
+      _modulo == 'notas' &&
+      !c.mapaVisible &&
+      c.notaSeleccionada != null;
 
   @override
   void initState() {
     super.initState();
+    _bovedaVisible = c.preferencias['mostrar_boveda'] != false;
+    _inspector = c.preferencias['mostrar_detalles'] != false;
+    final ancho = c.preferencias['ancho_boveda'];
+    if (ancho is num && ancho.isFinite) {
+      _anchoBoveda = ancho.toDouble().clamp(240, 480);
+    }
     WidgetsBinding.instance.addObserver(this);
+    VentanaEscritorio.instancia.antesDeCerrar = _guardarAntesDeCerrar;
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    VentanaEscritorio.instancia.antesDeCerrar = null;
     super.dispose();
   }
 
@@ -60,16 +79,26 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
 
   @override
   Future<AppExitResponse> didRequestAppExit() async {
+    return await _guardarAntesDeCerrar()
+        ? AppExitResponse.exit
+        : AppExitResponse.cancel;
+  }
+
+  Future<bool> _guardarAntesDeCerrar() async {
     await c.guardarPendientes();
-    return c.estadoGuardado == EstadoGuardado.error
-        ? AppExitResponse.cancel
-        : AppExitResponse.exit;
+    return c.estadoGuardado != EstadoGuardado.error;
   }
 
   @override
   Widget build(BuildContext context) {
     if (!c.cargada) {
       return Scaffold(
+        appBar: VentanaEscritorio.instancia.activa
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(44),
+                child: _barraSuperior(context, true),
+              )
+            : null,
         body: Center(
           child: Padding(
             padding: EdgeInsets.all(32),
@@ -105,6 +134,12 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
         if (_modulo == 'notas' &&
             !c.mapaVisible &&
             c.notaSeleccionada != null) ...{
+          SingleActivator(LogicalKeyboardKey.keyF, control: true, shift: true):
+              _alternarConcentracion,
+          SingleActivator(LogicalKeyboardKey.keyF, meta: true, shift: true):
+              _alternarConcentracion,
+          if (_concentracionActiva)
+            SingleActivator(LogicalKeyboardKey.escape): _alternarConcentracion,
           SingleActivator(LogicalKeyboardKey.keyF, control: true): () =>
               _editor.currentState?.abrirBusqueda(),
           SingleActivator(LogicalKeyboardKey.keyF, meta: true): () =>
@@ -136,20 +171,35 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
         child: LayoutBuilder(
           builder: (context, constraints) {
             final amplio = constraints.maxWidth >= 900;
+            final mostrarBoveda =
+                amplio && _modulo == 'notas' && _bovedaVisible;
+            final inspectorAcoplable =
+                amplio &&
+                constraints.maxWidth >=
+                    50 + (mostrarBoveda ? 246 : 0) + 243 + 440;
             final mostrarInspector =
                 _modulo == 'notas' &&
                 _inspector &&
-                constraints.maxWidth >= 1280 &&
+                inspectorAcoplable &&
                 c.notaSeleccionada != null &&
                 !c.mapaVisible;
+            // Reservar al menos 440 px para escribir y leer la nota.
+            final maximoBoveda =
+                (constraints.maxWidth -
+                        50 -
+                        6 -
+                        440 -
+                        (mostrarInspector ? 243 : 0))
+                    .clamp(240.0, 480.0);
+            final anchoBoveda = _anchoBoveda.clamp(240.0, maximoBoveda);
             final sidebar = PanelBoveda(
               controller: c,
+              mostrarCabecera: !amplio,
               alCrear: _crearNota,
               accionesNotas: _accionesNotas,
               accionesCarpeta: _accionesCarpeta,
               alCrearCarpeta: _crearCarpeta,
               alImportar: _importarMarkdown,
-              alAbrirOpciones: () => _cambiarModulo('opciones'),
               alSeleccionar: (nota) {
                 setState(() => _modulo = 'notas');
                 c.seleccionarNota(nota.id);
@@ -158,12 +208,22 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
             );
             return Scaffold(
               key: _estructura,
+              drawerEnableOpenDragGesture: !_concentracionActiva,
               drawer: amplio
                   ? null
                   : Drawer(width: 300, child: SafeArea(child: sidebar)),
               body: SafeArea(
                 child: Column(
                   children: [
+                    _barraSuperior(
+                      context,
+                      amplio,
+                      anchoBoveda: anchoBoveda,
+                      mostrarBoveda: mostrarBoveda,
+                      mostrarInspector: mostrarInspector,
+                      inspectorAcoplable: inspectorAcoplable,
+                    ),
+                    Divider(),
                     if (_operacionArchivo)
                       LinearProgressIndicator(minHeight: 2),
                     if (c.estadoGuardado == EstadoGuardado.error)
@@ -183,21 +243,40 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
                     Expanded(
                       child: Row(
                         children: [
-                          if (amplio) ...[
-                            _barraLateral(context),
-                            if (_modulo == 'notas')
-                              SizedBox(width: 272, child: sidebar),
-                            VerticalDivider(width: 1),
-                          ],
+                          if (amplio)
+                            Visibility(
+                              visible: !_concentracionActiva,
+                              maintainState: true,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _barraLateral(context),
+                                  if (mostrarBoveda) ...[
+                                    SizedBox(
+                                      key: const Key('columna-boveda'),
+                                      width: anchoBoveda,
+                                      child: sidebar,
+                                    ),
+                                    SeparadorPanel(
+                                      key: const Key('separador-boveda'),
+                                      ancho: anchoBoveda,
+                                      minimo: 240,
+                                      maximo: maximoBoveda,
+                                      alCambiar: (ancho) =>
+                                          setState(() => _anchoBoveda = ancho),
+                                      alTerminar: () => c.configurar(
+                                        'ancho_boveda',
+                                        _anchoBoveda,
+                                      ),
+                                    ),
+                                  ] else
+                                    VerticalDivider(width: 1),
+                                ],
+                              ),
+                            ),
                           Expanded(
                             child: Column(
                               children: [
-                                _barraSuperior(context, amplio),
-                                Divider(),
-                                if (_modulo == 'notas' &&
-                                    !c.mapaVisible &&
-                                    c.notasAbiertas.isNotEmpty)
-                                  _pestanas(context),
                                 Expanded(
                                   child: _modulo != 'notas'
                                       ? _panelModulo()
@@ -207,6 +286,8 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
                                       ? _estadoVacio(context)
                                       : EditorNota(
                                           key: _editor,
+                                          sinDistracciones:
+                                              _concentracionActiva,
                                           nota: c.notaSeleccionada!,
                                           controller: c,
                                           alRenombrar: () => _renombrarNota(
@@ -220,22 +301,34 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
                               ],
                             ),
                           ),
-                          if (mostrarInspector) ...[
-                            VerticalDivider(width: 1),
-                            SizedBox(
-                              width: 242,
-                              child: InspectorNota(
-                                controller: c,
-                                nota: c.notaSeleccionada!,
-                                alEncabezado: (offset) =>
-                                    _editor.currentState?.irAEncabezado(offset),
+                          if (mostrarInspector)
+                            Visibility(
+                              visible: !_concentracionActiva,
+                              maintainState: true,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  VerticalDivider(width: 1),
+                                  SizedBox(
+                                    key: const Key('columna-detalles'),
+                                    width: 242,
+                                    child: InspectorNota(
+                                      alOcultar: _alternarInspector,
+                                      controller: c,
+                                      nota: c.notaSeleccionada!,
+                                      alEncabezado: (offset) => _editor
+                                          .currentState
+                                          ?.irAEncabezado(offset),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
                         ],
                       ),
                     ),
-                    if (!amplio) _navegacionMovil(context),
+                    if (!amplio && !_concentracionActiva)
+                      _navegacionMovil(context),
                   ],
                 ),
               ),
@@ -247,17 +340,11 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
   }
 
   Widget _barraLateral(BuildContext context) => Container(
-    width: 58,
+    width: 50,
     color: TemaAplicacion.rail(context),
-    padding: EdgeInsets.symmetric(vertical: 19),
+    padding: EdgeInsets.symmetric(vertical: 10),
     child: Column(
       children: [
-        Icon(
-          Icons.blur_on_rounded,
-          color: Theme.of(context).colorScheme.primary,
-          size: 29,
-        ),
-        SizedBox(height: 29),
         _botonLateral(
           Icons.description_outlined,
           t('Notas'),
@@ -291,21 +378,7 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
           _modulo == 'tareas',
           () => _cambiarModulo('tareas'),
         ),
-        SizedBox(height: 12),
-        _botonLateral(
-          Icons.sync_rounded,
-          t('Sincronización'),
-          _modulo == 'sincronizacion',
-          () => _cambiarModulo('sincronizacion'),
-        ),
         Spacer(),
-        _botonLateral(
-          c.modoOscuro ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-          'Cambiar tema',
-          false,
-          c.alternarTema,
-        ),
-        SizedBox(height: 12),
         _botonLateral(
           Icons.help_outline_rounded,
           t('Ayuda y atajos'),
@@ -318,13 +391,6 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
           t('Opciones'),
           _modulo == 'opciones',
           () => _cambiarModulo('opciones'),
-        ),
-        SizedBox(height: 12),
-        _botonLateral(
-          Icons.info_outline_rounded,
-          t('Acerca de'),
-          _modulo == 'acerca',
-          () => _cambiarModulo('acerca'),
         ),
       ],
     ),
@@ -356,133 +422,249 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
     ),
   );
 
-  Widget _barraSuperior(BuildContext context, bool amplio) => SizedBox(
-    height: 51,
-    child: Padding(
-      padding: EdgeInsets.only(left: amplio ? 24 : 6, right: 10),
-      child: Row(
-        children: [
-          if (!amplio)
-            IconButton(
-              tooltip: t('Abrir bóveda'),
-              icon: Icon(Icons.menu_rounded),
-              onPressed: () => _estructura.currentState?.openDrawer(),
-            ),
-          Expanded(
-            child: Text(
-              t(
-                _modulo == 'notas'
-                    ? c.mapaVisible
-                          ? 'MAPA DE IDEAS'
-                          : 'MI ESPACIO'
-                    : _nombresModulos[_modulo]!,
-              ),
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.8,
-              ),
-            ),
-          ),
-          Icon(
-            c.estadoGuardado == EstadoGuardado.guardando
-                ? Icons.more_horiz
-                : c.estadoGuardado == EstadoGuardado.error
-                ? Icons.error_outline
-                : Icons.check_circle_outline,
-            size: 13,
-            color: c.estadoGuardado == EstadoGuardado.error
-                ? Theme.of(context).colorScheme.error
-                : Color(0xFF85AB99),
-          ),
-          SizedBox(width: 6),
-          Text(
-            t(switch (c.estadoGuardado) {
-              EstadoGuardado.guardado => 'Guardado',
-              EstadoGuardado.guardando => 'Guardando…',
-              EstadoGuardado.error => 'Sin guardar',
-            }),
-            style: TextStyle(fontSize: 10, color: Color(0xFF8D899A)),
-          ),
-          SizedBox(width: 12),
-          if (amplio)
-            IconButton(
-              tooltip: t(_inspector ? 'Ocultar detalles' : 'Mostrar detalles'),
-              onPressed: () {
-                if (MediaQuery.sizeOf(context).width < 1280) {
-                  _mostrarDetalles();
-                } else {
-                  setState(() => _inspector = !_inspector);
-                }
-              },
-              icon: Icon(Icons.view_sidebar_outlined, size: 18),
-            ),
-        ],
-      ),
-    ),
-  );
+  void _alternarConcentracion() {
+    if (_modulo != 'notas' || c.mapaVisible || c.notaSeleccionada == null) {
+      return;
+    }
+    _estructura.currentState?.closeDrawer();
+    setState(() => _sinDistracciones = !_sinDistracciones);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _editor.currentState?.enfocarContenido();
+    });
+  }
 
-  Widget _pestanas(BuildContext context) => Container(
+  Widget _barraConcentracion(BuildContext context, String estado) => SizedBox(
+    key: const Key('cabecera-concentracion'),
     height: 44,
-    decoration: BoxDecoration(
-      border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
-    ),
-    child: ListView(
-      scrollDirection: Axis.horizontal,
+    child: Row(
       children: [
-        for (final nota in c.notasAbiertas)
-          Container(
-            constraints: BoxConstraints(maxWidth: 240),
-            decoration: BoxDecoration(
-              color: c.notaSeleccionada?.id == nota.id
-                  ? Theme.of(context).colorScheme.primary.withValues(alpha: .04)
-                  : null,
-              border: Border(
-                right: BorderSide(color: Theme.of(context).dividerColor),
-                bottom: BorderSide(
-                  color: c.notaSeleccionada?.id == nota.id
-                      ? Theme.of(context).colorScheme.primary
-                      : Colors.transparent,
-                  width: 2,
-                ),
-              ),
-            ),
-            child: InkWell(
-              onTap: () => c.seleccionarNota(nota.id),
-              child: Padding(
-                padding: EdgeInsets.only(left: 17, right: 5),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.description_outlined, size: 13),
-                    SizedBox(width: 9),
-                    Flexible(
-                      child: Text(
-                        nota.titulo,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 11),
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    IconButton(
-                      tooltip: t('Cerrar {titulo}', {'titulo': nota.titulo}),
-                      onPressed: () => c.cerrarPestana(nota.id),
-                      icon: Icon(Icons.close, size: 13),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ],
+        Expanded(
+          child: ZonaArrastreVentana(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  c.notaSeleccionada!.titulo,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ),
           ),
-        IconButton(
-          tooltip: t('Nueva nota'),
-          onPressed: _crearNota,
-          icon: Icon(Icons.add, size: 17),
         ),
+        Tooltip(
+          message: estado,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Icon(
+              c.estadoGuardado == EstadoGuardado.error
+                  ? Icons.error_outline
+                  : c.estadoGuardado == EstadoGuardado.guardando
+                  ? Icons.more_horiz
+                  : Icons.check_circle_outline,
+              semanticLabel: estado,
+              size: 14,
+              color: c.estadoGuardado == EstadoGuardado.error
+                  ? Theme.of(context).colorScheme.error
+                  : const Color(0xFF85AB99),
+            ),
+          ),
+        ),
+        if (!c.notaSeleccionada!.eliminada)
+          IconButton(
+            tooltip: t(c.modoEditor == ModoEditor.leer ? 'Editar' : 'Leer'),
+            onPressed: () {
+              c.cambiarModoEditor(
+                c.modoEditor == ModoEditor.leer
+                    ? ModoEditor.editar
+                    : ModoEditor.leer,
+              );
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) _editor.currentState?.enfocarContenido();
+              });
+            },
+            icon: Icon(
+              c.modoEditor == ModoEditor.leer
+                  ? Icons.edit_outlined
+                  : Icons.chrome_reader_mode_outlined,
+              size: 18,
+            ),
+          ),
+        Tooltip(
+          message: t('Salir del modo sin distracciones (Esc)'),
+          child: TextButton.icon(
+            key: const Key('salir-concentracion'),
+            onPressed: _alternarConcentracion,
+            icon: const Icon(Icons.center_focus_weak, size: 18),
+            label: Text(t('Salir')),
+          ),
+        ),
+        if (VentanaEscritorio.instancia.activa) const ControlesVentana(),
       ],
     ),
   );
+
+  void _alternarBoveda() {
+    setState(() => _bovedaVisible = !_bovedaVisible);
+    c.configurar('mostrar_boveda', _bovedaVisible);
+  }
+
+  void _alternarInspector() {
+    setState(() => _inspector = !_inspector);
+    c.configurar('mostrar_detalles', _inspector);
+  }
+
+  Widget _barraSuperior(
+    BuildContext context,
+    bool amplio, {
+    double anchoBoveda = 256,
+    bool mostrarBoveda = false,
+    bool mostrarInspector = false,
+    bool inspectorAcoplable = false,
+  }) {
+    final conPestanas =
+        _modulo == 'notas' && !c.mapaVisible && c.notasAbiertas.isNotEmpty;
+    final escritorio = VentanaEscritorio.instancia.activa;
+    final estado = t(switch (c.estadoGuardado) {
+      EstadoGuardado.guardado => 'Guardado',
+      EstadoGuardado.guardando => 'Guardando…',
+      EstadoGuardado.error => 'Sin guardar',
+    });
+    if (_concentracionActiva) return _barraConcentracion(context, estado);
+    return SizedBox(
+      key: const Key('cabecera-espacio'),
+      height: 44,
+      child: Row(
+        children: [
+          if (amplio && _modulo == 'notas')
+            SizedBox(
+              width: 50,
+              child: IconButton(
+                tooltip: t(
+                  _bovedaVisible ? 'Ocultar bóveda' : 'Mostrar bóveda',
+                ),
+                isSelected: mostrarBoveda,
+                icon: const Icon(Icons.vertical_split_outlined, size: 18),
+                selectedIcon: Icon(
+                  Icons.vertical_split,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                onPressed: _alternarBoveda,
+              ),
+            ),
+          if (!amplio)
+            IconButton(
+              tooltip: t('Abrir bóveda'),
+              icon: const Icon(Icons.menu_rounded),
+              onPressed: () => _estructura.currentState?.openDrawer(),
+            ),
+          if (mostrarBoveda)
+            SizedBox(
+              width: anchoBoveda + 6,
+              child: CabeceraBoveda(alCrear: _crearNota),
+            ),
+          Expanded(
+            child: conPestanas
+                ? PestanasNotas(
+                    notas: c.notasAbiertas,
+                    seleccionada: c.notaSeleccionada?.id,
+                    alSeleccionar: c.seleccionarNota,
+                    alCerrar: c.cerrarPestana,
+                  )
+                : ZonaArrastreVentana(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          t(
+                            _modulo == 'notas'
+                                ? c.mapaVisible
+                                      ? 'MAPA DE IDEAS'
+                                      : 'MI ESPACIO'
+                                : _nombresModulos[_modulo]!,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1.8,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+          ),
+          if (conPestanas && !mostrarBoveda)
+            IconButton(
+              tooltip: t('Nueva nota'),
+              onPressed: _crearNota,
+              icon: const Icon(Icons.add, size: 18),
+            ),
+          if (conPestanas && escritorio)
+            const ZonaArrastreVentana(
+              child: SizedBox(
+                key: Key('arrastre-cabecera'),
+                width: 64,
+                height: 44,
+              ),
+            ),
+          Tooltip(
+            message: estado,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Icon(
+                c.estadoGuardado == EstadoGuardado.guardando
+                    ? Icons.more_horiz
+                    : c.estadoGuardado == EstadoGuardado.error
+                    ? Icons.error_outline
+                    : Icons.check_circle_outline,
+                semanticLabel: estado,
+                size: 14,
+                color: c.estadoGuardado == EstadoGuardado.error
+                    ? Theme.of(context).colorScheme.error
+                    : const Color(0xFF85AB99),
+              ),
+            ),
+          ),
+          if (_modulo == 'notas' &&
+              !c.mapaVisible &&
+              c.notaSeleccionada != null)
+            IconButton(
+              tooltip: t(
+                mostrarInspector ? 'Ocultar detalles' : 'Mostrar detalles',
+              ),
+              isSelected: mostrarInspector,
+              onPressed: inspectorAcoplable
+                  ? _alternarInspector
+                  : _mostrarDetalles,
+              icon: const Icon(Icons.view_sidebar_outlined, size: 18),
+              selectedIcon: Icon(
+                Icons.view_sidebar,
+                size: 18,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          if (_modulo == 'notas' &&
+              !c.mapaVisible &&
+              c.notaSeleccionada != null)
+            IconButton(
+              key: const Key('activar-concentracion'),
+              tooltip: t('Modo sin distracciones (Ctrl/Cmd+Mayús+F)'),
+              onPressed: _alternarConcentracion,
+              icon: const Icon(Icons.center_focus_strong, size: 18),
+            ),
+          if (escritorio) const ControlesVentana(),
+        ],
+      ),
+    );
+  }
 
   Widget _navegacionMovil(BuildContext context) => Column(
     mainAxisSize: MainAxisSize.min,
@@ -513,15 +695,6 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
             tooltip: t('Detalles de la nota'),
             onPressed: _mostrarDetalles,
             icon: Icon(Icons.subject),
-          ),
-          IconButton(
-            tooltip: t('Cambiar tema'),
-            onPressed: c.alternarTema,
-            icon: Icon(
-              c.modoOscuro
-                  ? Icons.light_mode_outlined
-                  : Icons.dark_mode_outlined,
-            ),
           ),
           PopupMenuButton<String>(
             tooltip: t('Módulos'),
@@ -593,24 +766,23 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
   static const _nombresModulos = {
     'notas': 'Notas',
     'tareas': 'Tareas',
-    'sincronizacion': 'Sincronización',
     'opciones': 'Opciones',
-    'acerca': 'Acerca de',
   };
 
   void _cambiarModulo(String modulo) {
     _estructura.currentState?.closeDrawer();
-    setState(() => _modulo = modulo);
+    setState(() {
+      _modulo = modulo;
+      if (modulo != 'notas') _sinDistracciones = false;
+    });
   }
 
   Widget _panelModulo() => switch (_modulo) {
     'tareas' => PanelTareas(controlador: c),
-    'sincronizacion' => PanelSincronizacion(controlador: c),
     'opciones' => PanelOpciones(
       controlador: c,
       alAbrirNotas: () => _cambiarModulo('notas'),
     ),
-    'acerca' => PanelAcerca(),
     _ => _estadoVacio(context),
   };
 
@@ -877,7 +1049,11 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
     try {
       // Resolver por identificador recoge el contenido más reciente del editor.
       final notas = ids.map(c.notaPorId).whereType<Nota>().toList();
-      final archivo = await PluginExportacion().exportar(notas, formato);
+      final archivo = await PluginExportacion().exportar(
+        notas,
+        formato,
+        adjuntos: c.adjuntos,
+      );
       final destino = await FilePicker.saveFile(
         fileName: archivo.nombre,
         bytes: archivo.bytes,
@@ -1021,6 +1197,7 @@ class _EstadoPantallaEspacio extends State<PantallaEspacio>
       builder: (context) => SizedBox(
         height: MediaQuery.sizeOf(context).height * .75,
         child: InspectorNota(
+          alOcultar: () => Navigator.pop(context),
           controller: c,
           nota: nota,
           alEncabezado: (offset) {

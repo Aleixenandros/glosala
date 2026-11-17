@@ -8,6 +8,7 @@ import 'package:pdf/widgets.dart' as pdf;
 import 'package:xml/xml.dart';
 
 import '../dominio/nota.dart';
+import '../dominio/adjunto.dart';
 
 enum FormatoExportacion { markdown, html, pdf, ods }
 
@@ -34,9 +35,51 @@ class PluginExportacion implements PluginGlosala {
 
   Future<ArchivoExportado> exportar(
     List<Nota> notas,
-    FormatoExportacion formato,
-  ) async {
+    FormatoExportacion formato, {
+    List<Adjunto> adjuntos = const [],
+  }) async {
     if (notas.isEmpty) throw ArgumentError('Selecciona al menos una nota.');
+    final ids = notas.expand((n) => n.idsAdjuntos).toSet();
+    if (ids.isNotEmpty) {
+      final archivos = {for (final a in adjuntos) a.id: a};
+      if (!ids.every(archivos.containsKey)) {
+        throw const FormatException('Faltan adjuntos de estas notas.');
+      }
+      final portables = notas.map((nota) {
+        var texto = nota.contenido;
+        for (final id in nota.idsAdjuntos) {
+          final adjunto = archivos[id]!;
+          texto = texto.replaceAll(adjunto.enlace, adjunto.enlaceExportado);
+        }
+        return nota.copiar(contenido: texto);
+      }).toList();
+      final documento = await exportar(portables, formato);
+      final paquete = documento.tipoMime == 'application/zip'
+          ? ZipDecoder().decodeBytes(documento.bytes)
+          : (Archive()..addFile(
+              ArchiveFile(
+                documento.nombre,
+                documento.bytes.length,
+                documento.bytes,
+              ),
+            ));
+      for (final id in ids) {
+        final adjunto = archivos[id]!;
+        paquete.addFile(
+          ArchiveFile(
+            adjunto.rutaExportada,
+            adjunto.bytes.length,
+            adjunto.bytes,
+          ),
+        );
+      }
+      final nombre = documento.nombre.replaceFirst(RegExp(r'\.[^.]+$'), '');
+      return ArchivoExportado(
+        '$nombre.zip',
+        'application/zip',
+        Uint8List.fromList(ZipEncoder().encode(paquete)),
+      );
+    }
     final nombre = notas.length == 1
         ? notas.first.titulo.replaceAll(RegExp(r'[<>:"/\\|?*\x00-\x1F]'), '_')
         : 'Glosala';
@@ -68,10 +111,10 @@ class PluginExportacion implements PluginGlosala {
         final contenido =
             '<!doctype html><html lang="es"><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width,initial-scale=1">'
-            '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'">'
+            '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src \'self\'">'
             '<title>${_escapar(nombre)}</title><style>body{font:16px/1.8 system-ui;max-width:850px;margin:48px auto;padding:24px;color:#262330}'
             'h1,h2,h3{line-height:1.3}article{margin-bottom:64px}pre,blockquote{padding:18px;background:#f5f2fa;border-radius:8px}'
-            'pre{white-space:pre-wrap}a{color:#7051b8}table{border-collapse:collapse}td,th{border:1px solid #ddd;padding:10px}</style></head><body>'
+            'pre{white-space:pre-wrap}img{max-width:100%;height:auto}a{color:#7051b8}table{border-collapse:collapse}td,th{border:1px solid #ddd;padding:10px}</style></head><body>'
             '${notas.map((nota) => '<article id="${nota.id}"><h1>${_escapar(nota.titulo)}</h1>${_htmlSeguro(_analizar(nota.contenido))}</article>').join()}'
             '</body></html>';
         return ArchivoExportado(
@@ -132,22 +175,34 @@ class PluginExportacion implements PluginGlosala {
       'hr',
       'br',
       'input',
+      'img',
     };
     if (!permitidas.contains(nodo.tag)) return _escapar(nodo.textContent);
     if (nodo.tag == 'input') {
       return nodo.attributes.containsKey('checked') ? '[x] ' : '[ ] ';
     }
     if (nodo.tag == 'br' || nodo.tag == 'hr') return '<${nodo.tag}>';
+    if (nodo.tag == 'img') {
+      final origen = nodo.attributes['src'] ?? '';
+      return _rutaAdjunto(origen)
+          ? '<img src="${_escapar(origen)}" alt="${_escapar(nodo.attributes['alt'] ?? '')}">'
+          : _escapar(nodo.attributes['alt'] ?? '');
+    }
     var atributos = '';
     if (nodo.tag == 'a') {
       final enlace = nodo.attributes['href'] ?? '';
       final uri = Uri.tryParse(enlace);
-      if (uri != null && {'http', 'https', 'mailto'}.contains(uri.scheme)) {
+      if (uri != null &&
+          ({'http', 'https', 'mailto'}.contains(uri.scheme) ||
+              _rutaAdjunto(enlace))) {
         atributos = ' href="${_escapar(enlace)}" rel="noopener noreferrer"';
       }
     }
     return '<${nodo.tag}$atributos>${_htmlSeguro(nodo.children ?? [])}</${nodo.tag}>';
   }).join();
+
+  bool _rutaAdjunto(String ruta) =>
+      RegExp(r'^adjuntos/[a-f0-9]{64}/[^/]+$').hasMatch(ruta);
 
   Future<Uint8List> _pdf(List<Nota> notas) async {
     final fuente = pdf.Font.ttf(

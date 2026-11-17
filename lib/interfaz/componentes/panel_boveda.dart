@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'menu_contextual.dart';
+import 'cabecera_boveda.dart';
 
 import '../../aplicacion/controlador_boveda.dart';
 import '../../dominio/nota.dart';
@@ -14,20 +15,20 @@ import '../tema_aplicacion.dart';
 class PanelBoveda extends StatefulWidget {
   const PanelBoveda({
     super.key,
+    this.mostrarCabecera = true,
     required this.controller,
     required this.alCrear,
     required this.alCrearCarpeta,
     required this.alImportar,
     required this.alSeleccionar,
-    required this.alAbrirOpciones,
     required this.accionesNotas,
     required this.accionesCarpeta,
   });
+  final bool mostrarCabecera;
   final ControladorBoveda controller;
   final VoidCallback alCrear;
   final VoidCallback alCrearCarpeta;
   final VoidCallback alImportar;
-  final VoidCallback alAbrirOpciones;
   final ValueChanged<Nota> alSeleccionar;
   final List<Widget> Function(List<Nota>) accionesNotas;
   final List<Widget> Function(String) accionesCarpeta;
@@ -39,6 +40,8 @@ class PanelBoveda extends StatefulWidget {
 class _EstadoPanelBoveda extends State<PanelBoveda> {
   final _buscador = TextEditingController();
   bool _modoSeleccion = false;
+  bool _carpetasAbiertas = true;
+  bool _etiquetasAbiertas = false;
 
   @override
   void dispose() {
@@ -65,60 +68,9 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (widget.mostrarCabecera) CabeceraBoveda(alCrear: widget.alCrear),
           Padding(
-            padding: EdgeInsets.fromLTRB(20, 23, 14, 20),
-            child: Row(
-              children: [
-                Container(
-                  width: 35,
-                  height: 35,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: .14),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    Icons.auto_stories_rounded,
-                    color: theme.colorScheme.primary,
-                    size: 20,
-                  ),
-                ),
-                SizedBox(width: 11),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        t('Glosala'),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -.5,
-                        ),
-                      ),
-                      SizedBox(height: 1),
-                      Text(
-                        t('Tu espacio para pensar'),
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Color(0xFF8D899A),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: FilledButton.icon(
-              onPressed: widget.alCrear,
-              icon: Icon(Icons.add, size: 18),
-              label: Text(t('Nueva nota')),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.fromLTRB(12, 8, 12, 8),
             child: TextField(
               key: Key('sidebar-search'),
               controller: _buscador,
@@ -153,72 +105,47 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
             () => c.cambiarFiltro(FiltroNotas.favoritas),
             count: c.notasActivas.where((n) => n.favorita).length,
           ),
-          _navegacion(
-            context,
-            Icons.delete_outline_rounded,
-            t('Papelera'),
-            c.filtro == FiltroNotas.papelera,
-            () => c.cambiarFiltro(FiltroNotas.papelera),
-            count: c.notas.where((n) => n.eliminada).length,
-          ),
-          SizedBox(height: 12),
-          ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: 190),
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(left: 22, right: 10),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            t('CARPETAS'),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 1.4,
-                              color: Color(0xFF8D899A),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: t('Nueva carpeta'),
-                          onPressed: widget.alCrearCarpeta,
-                          icon: Icon(
-                            Icons.create_new_folder_outlined,
-                            size: 17,
-                          ),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ],
-                    ),
-                  ),
-                  for (final carpeta in c.carpetas)
-                    MenuContextual(
-                      key: ValueKey('carpeta-$carpeta'),
-                      descripcion: t('Acciones de {titulo}', {
-                        'titulo': carpeta,
-                      }),
-                      acciones: widget.accionesCarpeta(carpeta),
-                      construir: (boton) => _navegacion(
-                        context,
-                        Icons.folder_outlined,
-                        carpeta,
-                        c.carpeta == carpeta,
-                        () => c.cambiarFiltro(
-                          FiltroNotas.todas,
-                          enCarpeta: carpeta,
-                        ),
-                        compacto: true,
-                        adicional: boton,
-                      ),
-                    ),
-                ],
-              ),
+          _cabeceraSeccion(
+            t('CARPETAS'),
+            _carpetasAbiertas,
+            () => setState(() => _carpetasAbiertas = !_carpetasAbiertas),
+            accion: IconButton(
+              tooltip: t('Nueva carpeta'),
+              onPressed: widget.alCrearCarpeta,
+              icon: const Icon(Icons.create_new_folder_outlined, size: 17),
+              visualDensity: VisualDensity.compact,
             ),
           ),
-          SizedBox(height: 12),
+          if (_carpetasAbiertas)
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 120),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    for (final carpeta in c.carpetas)
+                      MenuContextual(
+                        key: ValueKey('carpeta-$carpeta'),
+                        descripcion: t('Acciones de {titulo}', {
+                          'titulo': carpeta,
+                        }),
+                        acciones: widget.accionesCarpeta(carpeta),
+                        construir: (boton) => _navegacion(
+                          context,
+                          Icons.folder_outlined,
+                          carpeta,
+                          c.carpeta == carpeta,
+                          () => c.cambiarFiltro(
+                            FiltroNotas.todas,
+                            enCarpeta: carpeta,
+                          ),
+                          compacto: true,
+                          adicional: boton,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
           Divider(),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -347,7 +274,7 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
                             marcada ? marcadas : [nota],
                           ),
                           construir: (boton) => Padding(
-                            padding: EdgeInsets.only(bottom: 5),
+                            padding: EdgeInsets.only(bottom: 2),
                             child: Material(
                               color: (selected || marcada)
                                   ? theme.colorScheme.primary.withValues(
@@ -379,7 +306,7 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
                                 child: Padding(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 8,
-                                    vertical: 10,
+                                    vertical: 6,
                                   ),
                                   child: Row(
                                     crossAxisAlignment:
@@ -430,7 +357,7 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
                                                     : null,
                                               ),
                                             ),
-                                            SizedBox(height: 5),
+                                            SizedBox(height: 3),
                                             Text(
                                               nota.extracto.isEmpty
                                                   ? t('Una página en blanco')
@@ -470,8 +397,22 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
             ),
           ),
           if (c.etiquetas.isNotEmpty)
+            _cabeceraSeccion(
+              c.tag == null ? t('ETIQUETAS') : '#${c.tag}',
+              _etiquetasAbiertas,
+              () => setState(() => _etiquetasAbiertas = !_etiquetasAbiertas),
+              accion: c.tag == null
+                  ? null
+                  : IconButton(
+                      tooltip: t('Quitar filtro'),
+                      onPressed: () => c.cambiarFiltro(FiltroNotas.todas),
+                      icon: const Icon(Icons.close, size: 16),
+                      visualDensity: VisualDensity.compact,
+                    ),
+            ),
+          if (c.etiquetas.isNotEmpty && _etiquetasAbiertas)
             Padding(
-              padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
+              padding: EdgeInsets.fromLTRB(12, 0, 12, 8),
               child: SizedBox(
                 height: 29,
                 child: ListView(
@@ -501,9 +442,17 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
                 ),
               ),
             ),
+          _navegacion(
+            context,
+            Icons.delete_outline_rounded,
+            t('Papelera'),
+            c.filtro == FiltroNotas.papelera,
+            () => c.cambiarFiltro(FiltroNotas.papelera),
+            count: c.notas.where((n) => n.eliminada).length,
+          ),
           Divider(),
           Padding(
-            padding: EdgeInsets.fromLTRB(18, 9, 10, 9),
+            padding: EdgeInsets.fromLTRB(14, 2, 8, 2),
             child: Row(
               children: [
                 Icon(
@@ -524,12 +473,6 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
                   icon: Icon(Icons.file_upload_outlined, size: 18),
                   visualDensity: VisualDensity.compact,
                 ),
-                IconButton(
-                  tooltip: t('Ajustes'),
-                  onPressed: widget.alAbrirOpciones,
-                  icon: Icon(Icons.tune_rounded, size: 18),
-                  visualDensity: VisualDensity.compact,
-                ),
               ],
             ),
           ),
@@ -540,12 +483,47 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
     return LayoutBuilder(
       builder: (context, limites) => SingleChildScrollView(
         child: SizedBox(
-          height: limites.maxHeight < 720 ? 720 : limites.maxHeight,
+          height: limites.maxHeight < 520 ? 520 : limites.maxHeight,
           child: panel,
         ),
       ),
     );
   }
+
+  Widget _cabeceraSeccion(
+    String titulo,
+    bool abierta,
+    VoidCallback alternar, {
+    Widget? accion,
+  }) => SizedBox(
+    height: 34,
+    child: Row(
+      children: [
+        Expanded(
+          child: Semantics(
+            expanded: abierta,
+            child: TextButton.icon(
+              onPressed: alternar,
+              style: TextButton.styleFrom(
+                alignment: Alignment.centerLeft,
+                foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              icon: Icon(
+                abierta ? Icons.expand_more : Icons.chevron_right,
+                size: 16,
+              ),
+              label: Text(
+                titulo,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 10, letterSpacing: 1),
+              ),
+            ),
+          ),
+        ),
+        ?accion,
+      ],
+    ),
+  );
 
   Widget _navegacion(
     BuildContext context,
@@ -569,7 +547,7 @@ class _EstadoPanelBoveda extends State<PanelBoveda> {
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: 10,
-              vertical: compacto ? 2 : 10,
+              vertical: compacto ? 0 : 7,
             ),
             child: Row(
               children: [

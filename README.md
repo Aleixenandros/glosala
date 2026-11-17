@@ -6,6 +6,8 @@ Aplicación Flutter de notas Markdown e ideas conectadas, inspirada en el flujo 
 
 Requiere **Flutter 3.50.0 / Dart 3.14**. El CI utiliza la misma versión.
 
+Para compilar en Linux, instala las bibliotecas de desarrollo GTK 3 y libmpv (`libmpv-dev` en Debian/Ubuntu, `mpv-devel` en Fedora). La reproducción utiliza libmpv del sistema.
+
 ```bash
 flutter pub get
 flutter run -d linux
@@ -19,23 +21,27 @@ Para Android, conecta un dispositivo o inicia un emulador y ejecuta `flutter run
 
 - **Notas:** editor Markdown, lectura y vista dividida en pantallas amplias; guardado automático, búsqueda, carpetas lógicas, favoritas, etiquetas, pestañas y papelera reversible. Ordenación por modificación, creación o título, guardada entre sesiones; duplicación de notas individuales o selecciones con títulos únicos.
 - **Edición:** búsqueda literal dentro de la nota, resaltado, navegación y reemplazo individual o completo. Deshacer/Rehacer con historial acotado de la nota abierta; formato de listas, tareas, citas y encabezados sobre todas las líneas seleccionadas.
+- **Adjuntos:** imágenes con vista previa, reproductor de audio/vídeo y documentos que se abren o descargan desde el botón de clip. Copias locales, sincronización y exportación en ZIP con los originales; hasta 100 MB por archivo. [Uso y límites](documentacion/adjuntos.md).
 - **Conexiones:** `[[Título]]`, `[[Título|alias]]`, enlaces entrantes y mapa interactivo. Al renombrar una nota se actualizan sus enlaces internos.
 - **Tareas:** tareas y subtareas anidadas, edición, eliminación con confirmación y filtros. Completar una tarea completa sus subtareas; los padres reflejan el estado de sus hijas.
-- **Idiomas:** español, inglés, francés, alemán y portugués. Selector en Opciones y editor XML con validación, importación y exportación. El contenido de las notas conserva su idioma original.
+- **Idiomas:** español, inglés, francés, alemán y portugués. Selector en **Opciones → Idiomas** y editor XML con validación, importación y exportación. El contenido de las notas conserva su idioma original.
 - **Apariencia:** claro, oscuro o sistema; temas Amatista, Bosque, Océano y Ámbar.
-- **Sincronización:** manual, mediante WebDAV o una carpeta de escritorio/NAS montada. Comparación de versiones y copias de conflicto, sin descartar silenciosamente contenido.
+- **Sincronización:** al final de **Opciones**, mediante WebDAV o una carpeta de escritorio/NAS montada. Comparación manual de versiones y copias de conflicto, sin descartar silenciosamente contenido.
+- **Espacio de trabajo:** columna de notas ocultable y redimensionable arrastrando su borde derecho; doble clic en el separador restablece el ancho. La columna de detalles se oculta desde su botón de cierre o desde la cabecera. Se recuerdan el ancho y la visibilidad de ambas columnas. Carpetas y etiquetas son plegables, con Papelera debajo. Opciones organiza apariencia, idiomas, bóveda, plugins, acerca de y sincronización en secciones independientes.
+- **Ventana de escritorio:** pestañas, nueva nota y controles de minimizar, maximizar/restaurar y cerrar comparten una sola cabecera. Arrastra el nombre de la aplicación o los espacios libres de la cabecera para moverla; haz doble clic allí para maximizar. Los bordes permiten cambiar su tamaño. El cierre espera al guardado y se cancela si falla.
+- **Sin distracciones:** botón de enfoque en la cabecera o **Ctrl/Cmd+Mayús+F**. Centra la nota y oculta navegación, columnas, pestañas y herramientas. **Esc** o **Salir** recuperan la disposición anterior; se conservan la selección, el historial y el guardado automático.
 - **Menús contextuales:** botón derecho, pulsación larga o botón de opciones en cada nota y carpeta. Las carpetas se pueden renombrar o eliminar conservando sus notas en la raíz.
 - **Selección múltiple:** Ctrl/Cmd + clic, Mayús + clic para rangos o casillas. Permite mover, marcar favoritas, enviar a la papelera, restaurar y exportar las notas seleccionadas. «Seleccionar todas» respeta la búsqueda y la carpeta visibles. Con el foco en el listado, Ctrl/Cmd+A selecciona todas y Escape limpia la selección; Mayús+F10 abre el menú contextual.
 - **Plugins:** activación en **Opciones → Plugins**. Al habilitar Exportación de notas, el menú de cada nota o selección ofrece **Exportar a… → Markdown, HTML, PDF u ODS**. Varias notas en Markdown se reúnen en un ZIP.
-- **Acerca de:** versión, repositorio, licencias y comprobación de actualizaciones en GitHub Releases.
+- **Acerca de:** en **Opciones → Acerca de**, versión, repositorio, licencias y comprobación de actualizaciones en GitHub Releases.
 
 ## Editor y ejemplos
 
-Consulta [los atajos y herramientas del editor](documentacion/editor.md). Las notas de bienvenida combinan ejemplos de Markdown con un toque de [Chiquito Ipsum](https://www.chiquitoipsum.com/). Desde **Opciones → Notas de ejemplo → Añadir notas de ejemplo** puedes incorporarlas a una bóveda existente. Se crean copias con identificadores y títulos nuevos, conservando las notas que ya tenías y conectando los ejemplos entre sí.
+Consulta [los atajos y herramientas del editor](documentacion/editor.md). Las notas de bienvenida combinan ejemplos de Markdown con un toque de [Chiquito Ipsum](https://www.chiquitoipsum.com/). Desde **Opciones → Bóveda local → Añadir notas de ejemplo** puedes incorporarlas a una bóveda existente. Se crean copias con identificadores y títulos nuevos, conservando las notas que ya tenías y conectando los ejemplos entre sí.
 
 ## Persistencia
 
-En Android, iOS y escritorio, cada nota es un `.md` con cabecera YAML dentro del directorio de soporte de la aplicación. La ruta se muestra en **Opciones → Ubicación de la bóveda**. Las carpetas de la interfaz son metadatos y los nombres de archivo son identificadores estables. Copia la bóveda completa, con la aplicación cerrada, para conservar notas, tareas y preferencias.
+En Android, iOS y escritorio, cada nota es un `.md` con cabecera YAML dentro del directorio de soporte de la aplicación. La ruta se muestra en **Opciones → Bóveda local → Ubicación de la bóveda**. Las carpetas de la interfaz son metadatos y los nombres de archivo son identificadores estables. Copia la bóveda completa, con la aplicación cerrada, para conservar notas, tareas y preferencias.
 
 En web se utiliza **IndexedDB**. Los datos pertenecen al navegador y al origen de la aplicación; borrar los datos del sitio también elimina la bóveda. Usa exportación o sincronización para conservar otra copia. No hay cuentas ni servicio central de almacenamiento.
 
@@ -43,7 +49,7 @@ Las traducciones originales están en `recursos/idiomas/*.xml`. Las modificacion
 
 ## Sincronización
 
-Consulta [la configuración de sincronización](documentacion/sincronizacion.md). Se comparten notas, papelera y carpetas; tareas, preferencias, idiomas y credenciales permanecen en cada dispositivo.
+Consulta [la configuración de sincronización](documentacion/sincronizacion.md). Se comparten notas, papelera, carpetas y adjuntos; tareas, preferencias, idiomas y credenciales permanecen en cada dispositivo.
 
 ## Exportación y plugins
 
@@ -82,6 +88,7 @@ lib/
   dominio/           # Notas, tareas, bóveda y enlaces Markdown
   aplicacion/        # Operaciones y estado observable
   datos/             # Repositorios nativo y web
+  adjuntos/          # Recursos temporales y apertura por plataforma
   interfaz/          # Navegación, componentes y módulos
   idiomas/           # Lectura y validación de XML
   sincronizacion/    # Transporte, control de concurrencia y mezcla
@@ -95,4 +102,4 @@ Nuestros archivos y conceptos están en castellano. Los nombres exigidos por Flu
 
 ## Alcance de esta primera versión
 
-No incluye compatibilidad completa con una bóveda de Obsidian: aún no hay selección de bóvedas arbitrarias, observación de cambios externos en caliente, sincronización automática, edición colaborativa, enlaces a bloques, transclusiones ni gestor de adjuntos. Markdown admite imágenes por URL en lectura; el PDF no descarga ni incrusta imágenes. Las actualizaciones se consultan y descargan manualmente.
+No incluye compatibilidad completa con una bóveda de Obsidian: aún no hay selección de bóvedas arbitrarias, observación de cambios externos en caliente, sincronización automática, edición colaborativa, enlaces a bloques ni transclusiones. Los adjuntos se añaden desde el selector de archivos; todavía no se pueden pegar o arrastrar al editor ni eliminar definitivamente de la bóveda. Markdown admite imágenes locales y por URL en lectura; el PDF no descarga ni incrusta imágenes. Las actualizaciones se consultan y descargan manualmente.

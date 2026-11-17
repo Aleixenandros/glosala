@@ -144,7 +144,7 @@ Essayez une autre recherche ou créez une note.</texto>
   <texto clave="Sin guardar">Non enregistré</texto>
   <texto clave="Sincronización">Synchronisation</texto>
   <texto clave="Sincronización completada. Conflictos conservados: {cantidad}">Synchronisation terminée. Conflits conservés : {cantidad}</texto>
-  <texto clave="Sincronización manual de notas y carpetas. Los conflictos se conservan como copias.">Synchronisation manuelle des notes et dossiers. Les conflits sont conservés en copies.</texto>
+  <texto clave="Sincronización manual de notas, carpetas y adjuntos. Los conflictos se conservan como copias.">Synchronisation manuelle des notes, dossiers et pièces jointes. Les conflits sont conservés sous forme de copies.</texto>
   <texto clave="Sincronizando…">Synchronisation…</texto>
   <texto clave="Sincronizar ahora">Synchroniser maintenant</texto>
   <texto clave="Sistema">Système</texto>
@@ -203,7 +203,10 @@ Ctrl / Cmd + F : rechercher dans la note
 Ctrl + H ou Cmd + Alt + F : rechercher et remplacer
 F3 / Maj + F3 : résultat suivant / précédent
 Les listes et citations s’appliquent à toutes les lignes sélectionnées.
-Triez ou dupliquez les notes depuis la liste. Ajoutez les nouveaux exemples humoristiques dans Options.</texto>
+Triez ou dupliquez les notes depuis la liste. Ajoutez les nouveaux exemples humoristiques dans Options.
+
+Ctrl / Cmd + Maj + F : activer ou quitter le mode sans distraction
+Échap : fermer d’abord la recherche, puis quitter le mode sans distraction</texto>
   <texto clave="Exportar a…">Exporter en…</texto>
   <texto clave="Abrir nota">Ouvrir la note</texto>
   <texto clave="Acciones de {titulo}">Actions pour {titulo}</texto>
@@ -249,4 +252,39 @@ Triez ou dupliquez les notes depuis la liste. Ajoutez les nouveaux exemples humo
   <texto clave="Notas de ejemplo">Notes d’exemple</texto>
   <texto clave="Añadir notas de ejemplo">Ajouter des notes d’exemple</texto>
   <texto clave="Añade tres notas con ejemplos de Markdown y un toque de Chiquito Ipsum.">Ajoutez trois notes avec des exemples Markdown et une touche de Chiquito Ipsum.</texto>
+  <texto clave="Idiomas">Langues</texto>
+  <texto clave="Ocultar bóveda">Masquer le coffre</texto>
+  <texto clave="Mostrar bóveda">Afficher le coffre</texto>
+  <texto clave="Quitar filtro">Effacer le filtre</texto>
+  <texto clave="Minimizar">Réduire</texto>
+  <texto clave="Maximizar">Agrandir</texto>
+  <texto clave="Restaurar ventana">Restaurer la fenêtre</texto>
+  <texto clave="Ajustar ancho de la bóveda">Ajuster la largeur du coffre</texto>
+  <texto clave="Arrastra para ajustar el ancho. Doble clic para restablecer.">Faites glisser pour ajuster la largeur. Double-cliquez pour réinitialiser.</texto>
+  <texto clave="Cerrar panel de detalles">Fermer le panneau de détails</texto>
+  <texto clave="Modo sin distracciones (Ctrl/Cmd+Mayús+F)">Mode sans distraction (Ctrl/Cmd+Maj+F)</texto>
+  <texto clave="Salir del modo sin distracciones (Esc)">Quitter le mode sans distraction (Échap)</texto>
+  <texto clave="Salir">Quitter</texto>
+  <texto clave="Adjuntos">Pièces jointes</texto>
+  <texto clave="Añadir archivos">Ajouter des fichiers</texto>
+  <texto clave="Añade imágenes, vídeos, audio o documentos a esta nota.">Ajoutez des images, des vidéos, du son ou des documents à cette note.</texto>
+  <texto clave="Quitar de la nota">Retirer de la note</texto>
+  <texto clave="Hasta 100 MB por archivo · 512 MB por bóveda">Jusqu’à 100 Mo par fichier · 512 Mo par coffre</texto>
+  <texto clave="El archivo supera el límite de 100 MB.">Le fichier dépasse la limite de 100 Mo.</texto>
+  <texto clave="La bóveda supera el límite de 512 MB de adjuntos.">Le coffre dépasse la limite de 512 Mo de pièces jointes.</texto>
+  <texto clave="No se han podido añadir los archivos.">Impossible d’ajouter les fichiers.</texto>
+  <texto clave="No se puede reproducir este formato. Puedes guardar una copia y abrirla con otra aplicación.">Ce format ne peut pas être lu. Vous pouvez enregistrer une copie et l’ouvrir avec une autre application.</texto>
+  <texto clave="No se ha podido abrir o guardar el archivo.">Impossible d’ouvrir ou d’enregistrer le fichier.</texto>
+  <texto clave="No hay vista previa para este archivo.">Aucun aperçu disponible pour ce fichier.</texto>
+  <texto clave="Abre el documento con tu aplicación habitual o guarda una copia.">Ouvrez le document avec votre application habituelle ou enregistrez une copie.</texto>
+  <texto clave="Guardar una copia">Enregistrer une copie</texto>
+  <texto clave="Abrir PDF">Ouvrir le PDF</texto>
+  <texto clave="Abrir en otra aplicación">Ouvrir avec une autre application</texto>
+  <texto clave="Reproducir">Lire</texto>
+  <texto clave="Pausar">Pause</texto>
+  <texto clave="Silenciar">Couper le son</texto>
+  <texto clave="Activar sonido">Activer le son</texto>
+  <texto clave="Adjunto no disponible.">Pièce jointe indisponible.</texto>
+  <texto clave="Posición de reproducción">Position de lecture</texto>
+  <texto clave="Reproducir / Pausar">Lire / Pause</texto>
 </idioma>

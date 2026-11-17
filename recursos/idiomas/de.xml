@@ -144,7 +144,7 @@ Nutze # für Überschriften und [[ zum Verknüpfen von Ideen.</texto>
   <texto clave="Sin guardar">Nicht gespeichert</texto>
   <texto clave="Sincronización">Synchronisierung</texto>
   <texto clave="Sincronización completada. Conflictos conservados: {cantidad}">Synchronisierung abgeschlossen. Gesicherte Konflikte: {cantidad}</texto>
-  <texto clave="Sincronización manual de notas y carpetas. Los conflictos se conservan como copias.">Manuelle Synchronisierung von Notizen und Ordnern. Konflikte bleiben als Kopien erhalten.</texto>
+  <texto clave="Sincronización manual de notas, carpetas y adjuntos. Los conflictos se conservan como copias.">Manuelle Synchronisierung von Notizen, Ordnern und Anhängen. Konflikte werden als Kopien aufbewahrt.</texto>
   <texto clave="Sincronizando…">Synchronisierung läuft…</texto>
   <texto clave="Sincronizar ahora">Jetzt synchronisieren</texto>
   <texto clave="Sistema">System</texto>
@@ -203,7 +203,10 @@ Strg / Cmd + F: in der Notiz suchen
 Strg + H oder Cmd + Alt + F: suchen und ersetzen
 F3 / Umschalt + F3: nächster / vorheriger Treffer
 Listen und Zitate gelten für alle ausgewählten Zeilen.
-Sortiere oder dupliziere Notizen in der Liste. Füge die neuen humorvollen Beispiele in den Einstellungen hinzu.</texto>
+Sortiere oder dupliziere Notizen in der Liste. Füge die neuen humorvollen Beispiele in den Einstellungen hinzu.
+
+Strg / Cmd + Umschalt + F: ablenkungsfreien Modus umschalten
+Escape: zuerst die Suche schließen, dann den ablenkungsfreien Modus verlassen</texto>
   <texto clave="Exportar a…">Exportieren als…</texto>
   <texto clave="Abrir nota">Notiz öffnen</texto>
   <texto clave="Acciones de {titulo}">Aktionen für {titulo}</texto>
@@ -249,4 +252,39 @@ Sortiere oder dupliziere Notizen in der Liste. Füge die neuen humorvollen Beisp
   <texto clave="Notas de ejemplo">Beispielnotizen</texto>
   <texto clave="Añadir notas de ejemplo">Beispielnotizen hinzufügen</texto>
   <texto clave="Añade tres notas con ejemplos de Markdown y un toque de Chiquito Ipsum.">Füge drei Notizen mit Markdown-Beispielen und etwas Chiquito Ipsum hinzu.</texto>
+  <texto clave="Idiomas">Sprachen</texto>
+  <texto clave="Ocultar bóveda">Tresor ausblenden</texto>
+  <texto clave="Mostrar bóveda">Tresor anzeigen</texto>
+  <texto clave="Quitar filtro">Filter entfernen</texto>
+  <texto clave="Minimizar">Minimieren</texto>
+  <texto clave="Maximizar">Maximieren</texto>
+  <texto clave="Restaurar ventana">Fenster wiederherstellen</texto>
+  <texto clave="Ajustar ancho de la bóveda">Tresorbreite anpassen</texto>
+  <texto clave="Arrastra para ajustar el ancho. Doble clic para restablecer.">Ziehen, um die Breite anzupassen. Doppelklicken zum Zurücksetzen.</texto>
+  <texto clave="Cerrar panel de detalles">Detailbereich schließen</texto>
+  <texto clave="Modo sin distracciones (Ctrl/Cmd+Mayús+F)">Ablenkungsfreier Modus (Strg/Cmd+Umschalt+F)</texto>
+  <texto clave="Salir del modo sin distracciones (Esc)">Ablenkungsfreien Modus verlassen (Esc)</texto>
+  <texto clave="Salir">Verlassen</texto>
+  <texto clave="Adjuntos">Anhänge</texto>
+  <texto clave="Añadir archivos">Dateien hinzufügen</texto>
+  <texto clave="Añade imágenes, vídeos, audio o documentos a esta nota.">Füge dieser Notiz Bilder, Videos, Audio oder Dokumente hinzu.</texto>
+  <texto clave="Quitar de la nota">Aus der Notiz entfernen</texto>
+  <texto clave="Hasta 100 MB por archivo · 512 MB por bóveda">Bis zu 100 MB pro Datei · 512 MB pro Tresor</texto>
+  <texto clave="El archivo supera el límite de 100 MB.">Die Datei überschreitet die Grenze von 100 MB.</texto>
+  <texto clave="La bóveda supera el límite de 512 MB de adjuntos.">Der Tresor überschreitet die Grenze von 512 MB für Anhänge.</texto>
+  <texto clave="No se han podido añadir los archivos.">Die Dateien konnten nicht hinzugefügt werden.</texto>
+  <texto clave="No se puede reproducir este formato. Puedes guardar una copia y abrirla con otra aplicación.">Dieses Format kann nicht abgespielt werden. Du kannst eine Kopie speichern und sie mit einer anderen Anwendung öffnen.</texto>
+  <texto clave="No se ha podido abrir o guardar el archivo.">Die Datei konnte nicht geöffnet oder gespeichert werden.</texto>
+  <texto clave="No hay vista previa para este archivo.">Für diese Datei ist keine Vorschau verfügbar.</texto>
+  <texto clave="Abre el documento con tu aplicación habitual o guarda una copia.">Öffne das Dokument mit deiner gewohnten Anwendung oder speichere eine Kopie.</texto>
+  <texto clave="Guardar una copia">Kopie speichern</texto>
+  <texto clave="Abrir PDF">PDF öffnen</texto>
+  <texto clave="Abrir en otra aplicación">Mit anderer Anwendung öffnen</texto>
+  <texto clave="Reproducir">Abspielen</texto>
+  <texto clave="Pausar">Pausieren</texto>
+  <texto clave="Silenciar">Stummschalten</texto>
+  <texto clave="Activar sonido">Ton einschalten</texto>
+  <texto clave="Adjunto no disponible.">Anhang nicht verfügbar.</texto>
+  <texto clave="Posición de reproducción">Wiedergabeposition</texto>
+  <texto clave="Reproducir / Pausar">Abspielen / Pausieren</texto>
 </idioma>

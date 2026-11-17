@@ -7,6 +7,7 @@ import 'package:yaml/yaml.dart';
 
 import '../dominio/nota.dart';
 import '../dominio/boveda.dart';
+import '../dominio/adjunto.dart';
 import 'repositorio_boveda.dart';
 
 Future<RepositorioBoveda> crearRepositorioBoveda() async {
@@ -23,6 +24,7 @@ class RepositorioBovedaNativo implements RepositorioBoveda {
 
   final Directory directorio;
   final Map<String, String> _archivosGuardados = {};
+  final Set<String> _adjuntosGuardados = {};
 
   @override
   String get location => directorio.path;
@@ -65,15 +67,42 @@ class RepositorioBovedaNativo implements RepositorioBoveda {
       }
     }
     if (notas.isEmpty && !await archivoOpciones.exists()) return null;
+    final adjuntos = <Adjunto>[];
+    for (final valor in opciones['attachments'] as List? ?? []) {
+      final metadatos = Map<String, dynamic>.from(valor as Map);
+      final id = metadatos['id'] as String;
+      Adjunto.validarId(id);
+      final archivo = File(p.join(directorio.path, 'attachments', id));
+      if (await archivo.length() > Adjunto.maximoBytes) {
+        throw const FormatException('El archivo supera el límite de 100 MB.');
+      }
+      adjuntos.add(
+        Adjunto.desdeJson(metadatos, bytes: await archivo.readAsBytes()),
+      );
+      _adjuntosGuardados.add(id);
+    }
     return Boveda.desdeJson({
       ...opciones,
       'notes': notas.map((n) => n.aJson()).toList(),
-    });
+    }, adjuntosCargados: adjuntos);
   }
 
   @override
   Future<void> guardar(Boveda boveda) async {
     await directorio.create(recursive: true);
+    // Publicar los binarios antes que las referencias de las notas.
+    if (boveda.adjuntos.isNotEmpty) {
+      final carpeta = await Directory(p.join(directorio.path, 'attachments'))
+          .create(recursive: true);
+      for (final adjunto in boveda.adjuntos) {
+        if (_adjuntosGuardados.contains(adjunto.id)) continue;
+        final archivo = File(p.join(carpeta.path, adjunto.id));
+        final temporal = File('${archivo.path}.tmp');
+        await temporal.writeAsBytes(adjunto.bytes, flush: true);
+        await temporal.rename(archivo.path);
+        _adjuntosGuardados.add(adjunto.id);
+      }
+    }
     final carpetaNotas = await Directory(p.join(directorio.path, 'notes'))
         .create(recursive: true);
     for (final nota in boveda.notas) {
@@ -96,8 +125,9 @@ class RepositorioBovedaNativo implements RepositorioBoveda {
     }
     await _escribirAtomico(
       File(p.join(directorio.path, 'workspace.json')),
-      const JsonEncoder.withIndent('  ')
-          .convert(boveda.aJson(incluirNotas: false)),
+      const JsonEncoder.withIndent(
+        '  ',
+      ).convert(boveda.aJson(incluirNotas: false, incluirDatosAdjuntos: false)),
     );
   }
 

@@ -144,7 +144,7 @@ Try another search or create a new one.</texto>
   <texto clave="Sin guardar">Unsaved</texto>
   <texto clave="Sincronización">Sync</texto>
   <texto clave="Sincronización completada. Conflictos conservados: {cantidad}">Sync complete. Conflicts preserved: {cantidad}</texto>
-  <texto clave="Sincronización manual de notas y carpetas. Los conflictos se conservan como copias.">Manual sync of notes and folders. Conflicts are kept as copies.</texto>
+  <texto clave="Sincronización manual de notas, carpetas y adjuntos. Los conflictos se conservan como copias.">Manual sync of notes, folders and attachments. Conflicts are kept as copies.</texto>
   <texto clave="Sincronizando…">Syncing…</texto>
   <texto clave="Sincronizar ahora">Sync now</texto>
   <texto clave="Sistema">System</texto>
@@ -203,7 +203,10 @@ Ctrl / Cmd + F: find in the note
 Ctrl + H or Cmd + Alt + F: find and replace
 F3 / Shift + F3: next / previous match
 Lists and quotes apply to all selected lines.
-Sort or duplicate notes from the list. Add the new humorous samples in Settings.</texto>
+Sort or duplicate notes from the list. Add the new humorous samples in Settings.
+
+Ctrl / Cmd + Shift + F: toggle distraction-free mode
+Escape: close search first; then exit distraction-free mode</texto>
   <texto clave="Exportar a…">Export to…</texto>
   <texto clave="Abrir nota">Open note</texto>
   <texto clave="Acciones de {titulo}">Actions for {titulo}</texto>
@@ -249,4 +252,39 @@ Sort or duplicate notes from the list. Add the new humorous samples in Settings.
   <texto clave="Notas de ejemplo">Sample notes</texto>
   <texto clave="Añadir notas de ejemplo">Add sample notes</texto>
   <texto clave="Añade tres notas con ejemplos de Markdown y un toque de Chiquito Ipsum.">Add three notes with Markdown examples and a touch of Chiquito Ipsum.</texto>
+  <texto clave="Idiomas">Languages</texto>
+  <texto clave="Ocultar bóveda">Hide vault</texto>
+  <texto clave="Mostrar bóveda">Show vault</texto>
+  <texto clave="Quitar filtro">Clear filter</texto>
+  <texto clave="Minimizar">Minimize</texto>
+  <texto clave="Maximizar">Maximize</texto>
+  <texto clave="Restaurar ventana">Restore window</texto>
+  <texto clave="Ajustar ancho de la bóveda">Adjust vault width</texto>
+  <texto clave="Arrastra para ajustar el ancho. Doble clic para restablecer.">Drag to adjust width. Double-click to reset.</texto>
+  <texto clave="Cerrar panel de detalles">Close details panel</texto>
+  <texto clave="Modo sin distracciones (Ctrl/Cmd+Mayús+F)">Distraction-free mode (Ctrl/Cmd+Shift+F)</texto>
+  <texto clave="Salir del modo sin distracciones (Esc)">Exit distraction-free mode (Esc)</texto>
+  <texto clave="Salir">Exit</texto>
+  <texto clave="Adjuntos">Attachments</texto>
+  <texto clave="Añadir archivos">Add files</texto>
+  <texto clave="Añade imágenes, vídeos, audio o documentos a esta nota.">Add images, videos, audio or documents to this note.</texto>
+  <texto clave="Quitar de la nota">Remove from note</texto>
+  <texto clave="Hasta 100 MB por archivo · 512 MB por bóveda">Up to 100 MB per file · 512 MB per vault</texto>
+  <texto clave="El archivo supera el límite de 100 MB.">The file exceeds the 100 MB limit.</texto>
+  <texto clave="La bóveda supera el límite de 512 MB de adjuntos.">The vault exceeds the 512 MB attachment limit.</texto>
+  <texto clave="No se han podido añadir los archivos.">The files could not be added.</texto>
+  <texto clave="No se puede reproducir este formato. Puedes guardar una copia y abrirla con otra aplicación.">This format cannot be played. You can save a copy and open it in another app.</texto>
+  <texto clave="No se ha podido abrir o guardar el archivo.">The file could not be opened or saved.</texto>
+  <texto clave="No hay vista previa para este archivo.">No preview is available for this file.</texto>
+  <texto clave="Abre el documento con tu aplicación habitual o guarda una copia.">Open the document in your usual app or save a copy.</texto>
+  <texto clave="Guardar una copia">Save a copy</texto>
+  <texto clave="Abrir PDF">Open PDF</texto>
+  <texto clave="Abrir en otra aplicación">Open in another app</texto>
+  <texto clave="Reproducir">Play</texto>
+  <texto clave="Pausar">Pause</texto>
+  <texto clave="Silenciar">Mute</texto>
+  <texto clave="Activar sonido">Unmute</texto>
+  <texto clave="Adjunto no disponible.">Attachment unavailable.</texto>
+  <texto clave="Posición de reproducción">Playback position</texto>
+  <texto clave="Reproducir / Pausar">Play / Pause</texto>
 </idioma>

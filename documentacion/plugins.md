@@ -23,6 +23,8 @@ No se configura un formato único en Opciones: se elige en cada exportación. PD
 
 El selector nativo permite elegir el destino. En web inicia la descarga. Los archivos exportados son copias: exportar no mueve ni elimina las notas.
 
+Si las notas contienen adjuntos, cualquiera de los formatos se entrega en un ZIP con el documento y los archivos originales referenciados. Markdown y HTML usan rutas relativas; el HTML muestra las imágenes locales. Extrae el ZIP completo para conservar esos enlaces. Consulta [los detalles y límites de los adjuntos](adjuntos.md).
+
 ## Añadir otro plugin
 
 1. Implementar `PluginGlosala` en un archivo de `lib/plugins/`.

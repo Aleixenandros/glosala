@@ -33,6 +33,12 @@ class Nota {
 
   List<String> get enlaces => SintaxisEnlaceInterno.destinos(contenido);
 
+  Set<String> get idsAdjuntos =>
+      RegExp(r'adjunto:([a-f0-9]{64})(?![a-f0-9])')
+          .allMatches(contenido)
+          .map((coincidencia) => coincidencia[1]!)
+          .toSet();
+
   List<({String text, int level, int offset})> get encabezados {
     final fuente = _sinCodigo(contenido);
     return RegExp(r'^(#{1,6}) +(.+)$', multiLine: true)

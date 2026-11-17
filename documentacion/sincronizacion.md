@@ -3,10 +3,12 @@
 ## WebDAV
 
 1. Crea una carpeta dedicada en Nextcloud, ownCloud o el servicio WebDAV de tu NAS.
-2. Abre **Sincronización → WebDAV** e introduce la URL de esa carpeta, el usuario y una contraseña de aplicación.
+2. Abre **Opciones → Sincronización → WebDAV** e introduce la URL de esa carpeta, el usuario y una contraseña de aplicación. Sincronización es la última sección de Opciones.
 3. Pulsa **Sincronizar ahora** en cada dispositivo.
 
 Glosala lee y escribe `glosala-boveda.json`. No modifica archivos ajenos de la carpeta. La contraseña permanece solo en memoria mientras el panel está abierto; la URL y el usuario se guardan localmente. Usa HTTPS cuando envíes credenciales.
+
+El documento incluye notas, carpetas y adjuntos, incluidas las copias conservadas para Deshacer y las notas de la papelera. Los binarios se transmiten en base64; los vídeos grandes aumentan el tamaño y el tiempo de cada sincronización. Las bóvedas con adjuntos requieren una versión actualizada de Glosala en ambos dispositivos. [Detalles de almacenamiento y límites](adjuntos.md).
 
 El servidor debe admitir GET, PUT y precondiciones HTTP. Si existe el documento, debe proporcionar un ETag fuerte; la escritura utiliza `If-Match`. En la primera escritura se utiliza `If-None-Match: *`. Un cambio concurrente produce un error recuperable; vuelve a sincronizar para obtener la nueva versión. Los redireccionamientos no se siguen automáticamente para no reenviar credenciales a otro destino.
 
@@ -14,7 +16,7 @@ Desde web, el servidor debe permitir CORS desde el origen de Glosala: métodos G
 
 ## Carpeta o NAS
 
-En Linux, Windows o macOS, monta el recurso SMB/NFS mediante el sistema operativo. Selecciona su carpeta desde **Sincronización → Carpeta / NAS**. No es un cliente SMB incorporado. Esta opción utiliza bloqueo de archivo y comparación de la versión previa; el NAS debe respetar esos bloqueos. Las carpetas montadas no están disponibles desde web ni desde los selectores móviles de esta primera versión.
+En Linux, Windows o macOS, monta el recurso SMB/NFS mediante el sistema operativo. Selecciona su carpeta desde **Opciones → Sincronización → Carpeta / NAS**. No es un cliente SMB incorporado. Esta opción utiliza bloqueo de archivo y comparación de la versión previa; el NAS debe respetar esos bloqueos. Las carpetas montadas no están disponibles desde web ni desde los selectores móviles de esta primera versión.
 
 ## Conflictos
 
