@@ -103,10 +103,21 @@ jobs:
           if (-not $runtime) { throw 'No se ha encontrado el runtime x64 de Visual C++' }
           "GLOSALA_VC_REDIST=$($runtime.FullName)" >> $env:GITHUB_ENV
           $archivoNsis = Join-Path $env:RUNNER_TEMP 'nsis-3.13.zip'
-          Invoke-WebRequest 'https://downloads.sourceforge.net/project/nsis/NSIS%203/3.13/nsis-3.13.zip' -OutFile $archivoNsis
-          if ((Get-FileHash $archivoNsis -Algorithm SHA256).Hash -ne 'ba63dffc4410ee89193e1cb5a41989991bd77c61068da17e3156d136b7b0b3d8') {
-            throw 'La descarga de NSIS no coincide con la versión verificada'
+          $descargaVerificada = $false
+          foreach ($servidor in @('netix.dl.sourceforge.net', 'downloads.sourceforge.net', 'pilotfiber.dl.sourceforge.net')) {
+            try {
+              Invoke-WebRequest "https://$servidor/project/nsis/NSIS%203/3.13/nsis-3.13.zip" -UserAgent 'Python-urllib/3.12' -TimeoutSec 90 -OutFile $archivoNsis
+              $suma = (Get-FileHash $archivoNsis -Algorithm SHA256).Hash
+              if ($suma -eq 'ba63dffc4410ee89193e1cb5a41989991bd77c61068da17e3156d136b7b0b3d8') {
+                $descargaVerificada = $true
+                break
+              }
+              Write-Warning "Respuesta incorrecta de $servidor ($((Get-Item $archivoNsis).Length) bytes, SHA256 $suma)"
+            } catch {
+              Write-Warning "Descarga NSIS fallida en $servidor : $_"
+            }
           }
+          if (-not $descargaVerificada) { throw 'No se pudo descargar NSIS con el hash verificado' }
           Expand-Archive $archivoNsis $env:RUNNER_TEMP
           (Join-Path $env:RUNNER_TEMP 'nsis-3.13') >> $env:GITHUB_PATH
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
