@@ -90,9 +90,11 @@ jobs:
           dotnet tool install wix --version $env:WIX_VERSION --tool-path $herramientas
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $wix = Join-Path $herramientas 'wix.exe'
-          foreach ($extension in @('UI', 'Bal')) {
+          foreach ($extension in @('UI', 'BootstrapperApplications')) {
             & $wix extension add -g "WixToolset.$extension.wixext/$env:WIX_VERSION"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $biblioteca = Join-Path $env:USERPROFILE ".wix/extensions/WixToolset.$extension.wixext/$env:WIX_VERSION/wixext5/WixToolset.$extension.wixext.dll"
+            if (-not (Test-Path $biblioteca)) { throw "No se ha instalado la extensión $extension de WiX" }
           }
           $herramientas >> $env:GITHUB_PATH
           $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'

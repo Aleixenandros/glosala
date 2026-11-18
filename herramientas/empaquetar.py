@@ -212,7 +212,7 @@ def windows(origen, numero):
              '-ext', 'WixToolset.UI.wixext', '-o', msi)
     exe = trabajo / f'glosala-{numero}-windows-x64-setup.exe'
     ejecutar('wix', 'build', RAIZ / 'configuracion/instaladores/windows.wxs',
-             '-arch', 'x64', '-ext', 'WixToolset.Bal.wixext',
+             '-arch', 'x64', '-ext', 'WixToolset.BootstrapperApplications.wixext',
              '-d', f'Version={numero}', '-d', f'Paquete={msi}',
              '-d', f'Icono={RAIZ / "windows/runner/resources/app_icon.ico"}', '-o', exe)
     for archivo in [msi, exe]:
