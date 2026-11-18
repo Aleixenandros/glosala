@@ -43,11 +43,13 @@ def preparar(plataforma):
     return carpeta
 
 
-def zip_portable(origen, destino):
+def zip_portable(origen, destino, extras=None):
     with zipfile.ZipFile(destino, 'w', zipfile.ZIP_DEFLATED) as archivo:
         for ruta in sorted(origen.rglob('*')):
             if ruta.is_file():
                 archivo.write(ruta, ruta.relative_to(origen))
+        for nombre, contenido in (extras or {}).items():
+            archivo.writestr(nombre, contenido)
 
 
 def linux(origen, numero):
@@ -215,7 +217,19 @@ def windows(origen, numero):
              '-d', f'Icono={RAIZ / "windows/runner/resources/app_icon.ico"}', '-o', exe)
     for archivo in [msi, exe]:
         shutil.copy2(archivo, SALIDA / archivo.name)
-    zip_portable(origen, SALIDA / 'glosala-windows.zip')
+    zip_portable(origen, SALIDA / f'glosala-{numero}-windows-x64-portable.zip', {
+        'glosala.portable': 'Glosala guarda la bóveda en datos/boveda junto al ejecutable.\n',
+        'LEEME-portable.txt': (
+            f'Glosala {numero} — Windows portable\n\n'
+            'Extrae todo el ZIP en una carpeta donde puedas escribir y abre glosala.exe.\n'
+            'No necesita instalación ni permisos de administrador.\n'
+            'Las notas, adjuntos y preferencias se guardan en datos/boveda.\n'
+            'Cierra la aplicación antes de mover o copiar la carpeta completa.\n'
+            'Para actualizar, sustituye los archivos de la aplicación conservando datos/.\n'
+            'No borres el marcador glosala.portable: activa este almacenamiento local.\n'
+            'Esta bóveda es independiente de la versión instalada.\n'
+        ),
+    })
 
 
 def macos(origen, numero):

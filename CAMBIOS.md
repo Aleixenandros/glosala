@@ -4,6 +4,7 @@
 
 - Instaladores DEB y RPM para Linux, MSI y EXE para Windows, y DMG y PKG para macOS, además de los paquetes portables.
 - Accesos de lanzamiento y dependencias declaradas en Linux; runtime de Visual C++ incluido en Windows.
+- Windows portable en ZIP, con bóveda y preferencias en `datos/boveda` junto al ejecutable, independiente de la versión instalada.
 - CI comprueba instalación y desinstalación, y exige todos los formatos antes de preparar una Release.
 
 ## [0.2.0] — 2026-11-17

@@ -29,9 +29,12 @@ class DistribucionTest(unittest.TestCase):
     def test_rechaza_un_zip_renombrado_como_msi(self):
         with tempfile.TemporaryDirectory() as temporal:
             carpeta = Path(temporal)
-            for nombre in ['glosala-windows.zip', 'glosala-0.2.1-windows-x64.msi']:
+            for nombre in ['glosala-0.2.1-windows-x64-portable.zip', 'glosala-0.2.1-windows-x64.msi']:
                 with zipfile.ZipFile(carpeta / nombre, 'w') as archivo:
                     archivo.writestr('glosala.exe', b'MZ' + b'\0' * 2048)
+                    for necesario in ['glosala.portable', 'vcruntime140.dll',
+                                      'flutter_windows.dll', 'LEEME-portable.txt']:
+                        archivo.writestr(necesario, 'prueba')
             with self.assertRaisesRegex(ValueError, 'Formato incorrecto'):
                 verificar(carpeta, 'windows', '0.2.1')
 

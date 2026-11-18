@@ -14,6 +14,51 @@ void main() {
     await directorio.delete(recursive: true);
   });
 
+  test('Solo el marcador de Windows activa la bóveda portable', () async {
+    expect(await directorioBovedaPortable(directorio, esWindows: true), isNull);
+    await File('${directorio.path}/glosala.portable').writeAsString('portable');
+    expect(
+      await directorioBovedaPortable(directorio, esWindows: false),
+      isNull,
+    );
+    final portable = await directorioBovedaPortable(
+      directorio,
+      esWindows: true,
+    );
+    // Un destino inaccesible debe fallar sin sustituirlo por otra bóveda.
+    await File('${directorio.path}/datos').writeAsString('No es una carpeta');
+    await expectLater(
+      RepositorioBovedaNativo(portable!).guardar(const Boveda(notas: [])),
+      throwsA(isA<FileSystemException>()),
+    );
+  });
+
+  test('Mover la carpeta portable conserva las notas y preferencias', () async {
+    final aplicacion = await Directory('${directorio.path}/Glosala USB')
+        .create();
+    await File('${aplicacion.path}/glosala.portable').writeAsString('portable');
+    final ubicacion = await directorioBovedaPortable(
+      aplicacion,
+      esWindows: true,
+    );
+    final nota = Nota(
+      id: 'portable',
+      titulo: 'Mi nota portátil',
+      contenido: 'Conservar al mover la aplicación.',
+      creadaEl: DateTime(2026),
+      modificadaEl: DateTime(2026),
+    );
+    await RepositorioBovedaNativo(ubicacion!)
+        .guardar(Boveda(notas: [nota], preferencias: {'idioma': 'fr'}));
+    final trasladada = await aplicacion.rename('${directorio.path}/Otra ruta');
+    final nueva = await directorioBovedaPortable(trasladada, esWindows: true);
+    final reabierta = await RepositorioBovedaNativo(nueva!).cargar();
+    expect(nueva.path, startsWith(trasladada.path));
+    expect(reabierta!.notas.single.aJson(), nota.aJson());
+    expect(reabierta.preferencias['idioma'], 'fr');
+    expect(await ubicacion.exists(), isFalse);
+  });
+
   test('Reabre archivos Markdown, metadatos Unicode y preferencias', () async {
     final repositorio = RepositorioBovedaNativo(directorio);
     final nota = Nota(

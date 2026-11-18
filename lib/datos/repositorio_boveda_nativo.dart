@@ -11,10 +11,29 @@ import '../dominio/adjunto.dart';
 import 'repositorio_boveda.dart';
 
 Future<RepositorioBoveda> crearRepositorioBoveda() async {
+  final portable = await directorioBovedaPortable(
+    Directory(p.dirname(Platform.resolvedExecutable)),
+    esWindows: Platform.isWindows,
+  );
+  if (portable != null) return RepositorioBovedaNativo(portable);
   final soporte = await getApplicationSupportDirectory();
   return RepositorioBovedaNativo(
     Directory(p.join(soporte.path, 'Glosala', 'vault')),
   );
+}
+
+/// El ZIP portable incluye este marcador; los instaladores no lo distribuyen.
+/// Una carpeta sin permisos de escritura produce el error habitual de guardado,
+/// sin cambiar silenciosamente a otra bóveda en el perfil del usuario.
+Future<Directory?> directorioBovedaPortable(
+  Directory aplicacion, {
+  required bool esWindows,
+}) async {
+  if (!esWindows ||
+      !await File(p.join(aplicacion.path, 'glosala.portable')).exists()) {
+    return null;
+  }
+  return Directory(p.join(aplicacion.path, 'datos', 'boveda'));
 }
 
 /// Cada nota es un documento Markdown independiente con metadatos YAML.

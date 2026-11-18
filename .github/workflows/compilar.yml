@@ -90,8 +90,10 @@ jobs:
           dotnet tool install wix --version $env:WIX_VERSION --tool-path $herramientas
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $wix = Join-Path $herramientas 'wix.exe'
-          & $wix extension add -g "WixToolset.UI.wixext/$env:WIX_VERSION" "WixToolset.Bal.wixext/$env:WIX_VERSION"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($extension in @('UI', 'Bal')) {
+            & $wix extension add -g "WixToolset.$extension.wixext/$env:WIX_VERSION"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
           $herramientas >> $env:GITHUB_PATH
           $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
           $visualStudio = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath

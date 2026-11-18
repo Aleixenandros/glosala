@@ -11,7 +11,7 @@ def esperados(numero):
     return {
         'linux': ['glosala-linux.tar.gz', f'glosala_{numero}_amd64.deb',
                   f'glosala-{numero}-1.x86_64.rpm'],
-        'windows': ['glosala-windows.zip', f'glosala-{numero}-windows-x64.msi',
+        'windows': [f'glosala-{numero}-windows-x64-portable.zip', f'glosala-{numero}-windows-x64.msi',
                     f'glosala-{numero}-windows-x64-setup.exe'],
         'macos': ['glosala-macos-sin-notarizar.zip', f'glosala-{numero}-macos.dmg',
                   f'glosala-{numero}-macos.pkg'],
@@ -49,6 +49,13 @@ def verificar(carpeta, plataforma, numero):
                              'android': 'AndroidManifest.xml'}.get(plataforma)
                 if requerido and requerido not in contenido:
                     raise ValueError(f'Falta {requerido} en {nombre}')
+                if nombre.endswith('-portable.zip'):
+                    necesarios = {'glosala.exe', 'glosala.portable', 'vcruntime140.dll',
+                                  'flutter_windows.dll', 'LEEME-portable.txt'}
+                    if not necesarios.issubset(contenido):
+                        raise ValueError('El portable Windows está incompleto.')
+                    if any(n.startswith('datos/') for n in contenido):
+                        raise ValueError('El portable contiene datos de una bóveda.')
         elif nombre.endswith('.tar.gz'):
             with tarfile.open(ruta) as archivo:
                 if 'glosala/glosala' not in archivo.getnames():
