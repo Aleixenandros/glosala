@@ -217,19 +217,13 @@ def windows(origen, numero):
              '-d', f'Icono={RAIZ / "windows/runner/resources/app_icon.ico"}', '-o', exe)
     for archivo in [msi, exe]:
         shutil.copy2(archivo, SALIDA / archivo.name)
-    zip_portable(origen, SALIDA / f'glosala-{numero}-windows-x64-portable.zip', {
-        'glosala.portable': 'Glosala guarda la bóveda en datos/boveda junto al ejecutable.\n',
-        'LEEME-portable.txt': (
-            f'Glosala {numero} — Windows portable\n\n'
-            'Extrae todo el ZIP en una carpeta donde puedas escribir y abre glosala.exe.\n'
-            'No necesita instalación ni permisos de administrador.\n'
-            'Las notas, adjuntos y preferencias se guardan en datos/boveda.\n'
-            'Cierra la aplicación antes de mover o copiar la carpeta completa.\n'
-            'Para actualizar, sustituye los archivos de la aplicación conservando datos/.\n'
-            'No borres el marcador glosala.portable: activa este almacenamiento local.\n'
-            'Esta bóveda es independiente de la versión instalada.\n'
-        ),
-    })
+    contenido = trabajo / 'portable'
+    shutil.copytree(origen, contenido)
+    (contenido / 'glosala.portable').write_text('Glosala portable\n', encoding='utf-8')
+    portable = SALIDA / f'glosala-{numero}-windows-x64_portable.exe'
+    ejecutar('makensis', '/V2', f'/DVersion={numero}', f'/DAplicacion={contenido}',
+             f'/DSalida={portable}', f'/DIcono={RAIZ / "windows/runner/resources/app_icon.ico"}',
+             RAIZ / 'configuracion/instaladores/portable.nsi')
 
 
 def macos(origen, numero):

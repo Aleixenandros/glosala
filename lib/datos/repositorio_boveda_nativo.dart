@@ -14,6 +14,7 @@ Future<RepositorioBoveda> crearRepositorioBoveda() async {
   final portable = await directorioBovedaPortable(
     Directory(p.dirname(Platform.resolvedExecutable)),
     esWindows: Platform.isWindows,
+    raizPortable: Platform.environment['GLOSALA_PORTABLE_DIR'],
   );
   if (portable != null) return RepositorioBovedaNativo(portable);
   final soporte = await getApplicationSupportDirectory();
@@ -22,18 +23,26 @@ Future<RepositorioBoveda> crearRepositorioBoveda() async {
   );
 }
 
-/// El ZIP portable incluye este marcador; los instaladores no lo distribuyen.
+/// El lanzador portable incluye este marcador y transmite su ubicación original;
+/// los instaladores no lo distribuyen. Los datos no van al temporal de extracción.
 /// Una carpeta sin permisos de escritura produce el error habitual de guardado,
 /// sin cambiar silenciosamente a otra bóveda en el perfil del usuario.
 Future<Directory?> directorioBovedaPortable(
   Directory aplicacion, {
   required bool esWindows,
+  String? raizPortable,
 }) async {
   if (!esWindows ||
       !await File(p.join(aplicacion.path, 'glosala.portable')).exists()) {
     return null;
   }
-  return Directory(p.join(aplicacion.path, 'datos', 'boveda'));
+  final raiz = raizPortable == null || raizPortable.isEmpty
+      ? aplicacion.path
+      : raizPortable;
+  if (!p.isAbsolute(raiz)) {
+    throw const FormatException('La ubicación del portable debe ser absoluta.');
+  }
+  return Directory(p.join(raiz, 'datos', 'boveda'));
 }
 
 /// Cada nota es un documento Markdown independiente con metadatos YAML.

@@ -56,8 +56,41 @@ Comprobar-Desinstalacion
 Write-Output 'MSI y EXE: instalación, arranque y desinstalación correctos; datos conservados.'
 
 $portable = Join-Path $env:RUNNER_TEMP 'Glosala portable'
-Expand-Archive "distribucion/glosala-$version-windows-x64-portable.zip" $portable
-Abrir-Aplicacion (Join-Path $portable 'glosala.exe')
+New-Item -ItemType Directory $portable | Out-Null
+$nombrePortable = "glosala-$version-windows-x64_portable.exe"
+Copy-Item "distribucion/$nombrePortable" $portable
+
+function Abrir-Portable($directorio) {
+    $lanzador = Start-Process (Join-Path $directorio $nombrePortable) -PassThru
+    $hijo = $null
+    try {
+        for ($intento = 0; $intento -lt 60; $intento++) {
+            Start-Sleep -Seconds 1
+            $lanzador.Refresh()
+            if ($lanzador.HasExited) { throw "El portable ha terminado antes de abrirse: $($lanzador.ExitCode)" }
+            $hijo = Get-CimInstance Win32_Process -Filter "ParentProcessId = $($lanzador.Id) AND Name = 'glosala.exe'" | Select-Object -First 1
+            if ($hijo) { break }
+        }
+        if (-not $hijo) { throw 'El EXE portable no ha abierto Glosala' }
+        $aplicacion = Get-Process -Id $hijo.ProcessId
+        Start-Sleep -Seconds 5
+        $aplicacion.Refresh()
+        if ($aplicacion.HasExited) { throw 'La aplicación portable se ha cerrado inesperadamente' }
+        if (-not (Test-Path (Join-Path $directorio 'datos/boveda/workspace.json'))) {
+            throw 'El portable no ha creado su bóveda junto al EXE original'
+        }
+        $aplicacion.CloseMainWindow() | Out-Null
+        if (-not $aplicacion.WaitForExit(10000)) { throw 'La aplicación portable no se cierra correctamente' }
+        if (-not $lanzador.WaitForExit(10000)) { throw 'El lanzador portable no termina al cerrar Glosala' }
+        if ($lanzador.ExitCode -ne 0) { throw "El portable termina con código $($lanzador.ExitCode)" }
+        if (Test-Path $hijo.ExecutablePath) { throw 'El portable no ha limpiado los binarios temporales' }
+    } finally {
+        if ($hijo) { Stop-Process -Id $hijo.ProcessId -ErrorAction SilentlyContinue }
+        if (-not $lanzador.HasExited) { Stop-Process -Id $lanzador.Id -ErrorAction SilentlyContinue }
+    }
+}
+
+Abrir-Portable $portable
 $boveda = Join-Path $portable 'datos/boveda/workspace.json'
 if (-not (Test-Path $boveda)) { throw 'El portable no ha creado su bóveda junto al ejecutable' }
 $datos = Get-Content $boveda -Raw | ConvertFrom-Json -AsHashtable
@@ -65,7 +98,8 @@ $datos.preferencias['prueba_portable'] = 'Conservar al trasladar'
 $datos | ConvertTo-Json -Depth 30 | Set-Content $boveda -Encoding utf8
 $trasladado = Join-Path $env:RUNNER_TEMP 'Glosala trasladada'
 Move-Item $portable $trasladado
-Abrir-Aplicacion (Join-Path $trasladado 'glosala.exe')
+Abrir-Portable $trasladado
 $datos = Get-Content (Join-Path $trasladado 'datos/boveda/workspace.json') -Raw | ConvertFrom-Json -AsHashtable
 if ($datos.preferencias['prueba_portable'] -ne 'Conservar al trasladar') { throw 'Se ha perdido la bóveda portable' }
-Write-Output 'ZIP portable: arranque sin instalación y conservación de datos tras trasladar la carpeta correctos.'
+Comprobar-Desinstalacion
+Write-Output 'EXE portable: arranque autónomo, limpieza temporal y conservación de datos tras trasladar la carpeta correctos.'

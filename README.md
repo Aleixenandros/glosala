@@ -73,7 +73,7 @@ Los workflows se inspiran en la separación entre validación y compilación de 
 | Plataforma | Artefacto |
 | --- | --- |
 | Linux x64 | Instaladores `.deb` y `.rpm`, y portable `.tar.gz` |
-| Windows x64 | Instaladores `.msi` y `.exe`, y portable `.zip` |
+| Windows x64 | Instaladores `.msi` y `.exe`, y ejecutable `_portable.exe` |
 | macOS | Imagen `.dmg`, instalador `.pkg` y aplicación `.zip`, sin notarización |
 | Android | APK de pruebas, firmado con clave de desarrollo |
 | iOS | ZIP de la aplicación sin firmar; no instalable directamente |
@@ -83,7 +83,7 @@ Las etiquetas `v*` repiten las verificaciones y crean un **borrador** de GitHub 
 
 Desde 0.2.1, el CI exige los doce paquetes y prueba los instaladores: DEB en Ubuntu, RPM en Fedora, MSI/EXE en Windows y DMG/PKG en macOS. Las pruebas de desinstalación conservan los datos de las notas. El `.exe` es un asistente que incluye el mismo MSI; ambos instalan la aplicación completa y el runtime de Visual C++.
 
-El archivo `glosala-0.2.1-windows-x64-portable.zip` se extrae y ejecuta sin instalación. Incluye `glosala.portable`, que hace que las notas, adjuntos y preferencias se guarden en `datos/boveda`, junto al ejecutable. Cierra Glosala antes de trasladar la carpeta completa. Para actualizarla, conserva `datos/` y sustituye los archivos de la aplicación. La bóveda portable es independiente de la versión instalada.
+Abre `glosala-0.2.1-windows-x64_portable.exe` directamente desde una carpeta con permiso de escritura. Es un único ejecutable con la aplicación y sus DLL incluidas; no necesita instalación ni permisos de administrador. Las notas, adjuntos y preferencias se guardan en `datos/boveda`, junto al EXE descargado. Cierra Glosala y copia el EXE junto con `datos/` para trasladarla; para actualizar, sustituye únicamente el EXE. La bóveda portable es independiente de la versión instalada. Los binarios se extraen temporalmente al abrir y se eliminan al cerrar.
 
 ## Organización
 

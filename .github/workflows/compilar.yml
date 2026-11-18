@@ -102,6 +102,13 @@ jobs:
           $runtime = Get-ChildItem "$visualStudio/VC/Redist/MSVC/*/x64/Microsoft.VC*.CRT" -Directory | Sort-Object FullName -Descending | Select-Object -First 1
           if (-not $runtime) { throw 'No se ha encontrado el runtime x64 de Visual C++' }
           "GLOSALA_VC_REDIST=$($runtime.FullName)" >> $env:GITHUB_ENV
+          $archivoNsis = Join-Path $env:RUNNER_TEMP 'nsis-3.13.zip'
+          Invoke-WebRequest 'https://downloads.sourceforge.net/project/nsis/NSIS%203/3.13/nsis-3.13.zip' -OutFile $archivoNsis
+          if ((Get-FileHash $archivoNsis -Algorithm SHA256).Hash -ne 'ba63dffc4410ee89193e1cb5a41989991bd77c61068da17e3156d136b7b0b3d8') {
+            throw 'La descarga de NSIS no coincide con la versión verificada'
+          }
+          Expand-Archive $archivoNsis $env:RUNNER_TEMP
+          (Join-Path $env:RUNNER_TEMP 'nsis-3.13') >> $env:GITHUB_PATH
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -115,7 +122,7 @@ jobs:
         run: python herramientas/empaquetar.py ${{ matrix.plataforma }}
       - name: Comprobar paquetes esperados
         run: python herramientas/verificar_paquetes.py ${{ matrix.plataforma }}
-      - name: Instalar, abrir y desinstalar MSI y EXE
+      - name: Probar MSI, EXE y ejecutable portable
         if: matrix.plataforma == 'windows'
         shell: pwsh
         run: ./herramientas/probar_instaladores_windows.ps1

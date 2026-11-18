@@ -59,6 +59,39 @@ void main() {
     expect(await ubicacion.exists(), isFalse);
   });
 
+  test(
+    'El lanzador conserva la bóveda fuera del temporal de extracción',
+    () async {
+      final extraida = await Directory('${directorio.path}/Temporal').create();
+      final original = await Directory('${directorio.path}/USB con espacios')
+          .create();
+      expect(
+        await directorioBovedaPortable(
+          extraida,
+          esWindows: true,
+          raizPortable: original.path,
+        ),
+        isNull,
+      );
+      await File('${extraida.path}/glosala.portable').writeAsString('portable');
+      final boveda = await directorioBovedaPortable(
+        extraida,
+        esWindows: true,
+        raizPortable: original.path,
+      );
+      await RepositorioBovedaNativo(boveda!)
+          .guardar(const Boveda(notas: [], preferencias: {'idioma': 'fr'}));
+      await extraida.delete(recursive: true);
+      expect(
+        (await RepositorioBovedaNativo(
+          boveda,
+        ).cargar())!.preferencias['idioma'],
+        'fr',
+      );
+      expect(boveda.path, startsWith(original.path));
+    },
+  );
+
   test('Reabre archivos Markdown, metadatos Unicode y preferencias', () async {
     final repositorio = RepositorioBovedaNativo(directorio);
     final nota = Nota(

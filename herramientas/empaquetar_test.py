@@ -26,16 +26,17 @@ class DistribucionTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, r'glosala_0.2.1_amd64.deb'):
                 verificar(carpeta, 'linux', '0.2.1')
 
-    def test_rechaza_un_zip_renombrado_como_msi(self):
+    def test_rechaza_un_zip_renombrado_como_ejecutable_o_msi(self):
         with tempfile.TemporaryDirectory() as temporal:
             carpeta = Path(temporal)
-            for nombre in ['glosala-0.2.1-windows-x64-portable.zip', 'glosala-0.2.1-windows-x64.msi']:
+            portable = carpeta / 'glosala-0.2.1-windows-x64_portable.exe'
+            for nombre in [portable.name, 'glosala-0.2.1-windows-x64.msi']:
                 with zipfile.ZipFile(carpeta / nombre, 'w') as archivo:
                     archivo.writestr('glosala.exe', b'MZ' + b'\0' * 2048)
-                    for necesario in ['glosala.portable', 'vcruntime140.dll',
-                                      'flutter_windows.dll', 'LEEME-portable.txt']:
-                        archivo.writestr(necesario, 'prueba')
-            with self.assertRaisesRegex(ValueError, 'Formato incorrecto'):
+            with self.assertRaisesRegex(ValueError, 'Formato incorrecto: .*_portable.exe'):
+                verificar(carpeta, 'windows', '0.2.1')
+            portable.write_bytes(b'MZ' + b'\0' * 2048)
+            with self.assertRaisesRegex(ValueError, 'Formato incorrecto: .*msi'):
                 verificar(carpeta, 'windows', '0.2.1')
 
     def test_msi_actualiza_el_producto_conservando_identidad_de_componentes(self):
