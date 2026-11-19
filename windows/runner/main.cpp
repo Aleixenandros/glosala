@@ -38,6 +38,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     ::DispatchMessage(&msg);
   }
 
+  // window_manager termina el bucle con WM_QUIT. Liberar la vista y los
+  // plugins antes de COM, mientras el controlador aún admite OnDestroy.
+  window.Destroy();
   ::CoUninitialize();
   return EXIT_SUCCESS;
 }

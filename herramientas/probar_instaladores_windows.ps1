@@ -25,9 +25,18 @@ function Abrir-Aplicacion($ejecutable) {
         $aplicacion.Refresh()
         if ($aplicacion.HasExited) { throw "La aplicación no arranca: $($aplicacion.ExitCode)" }
         $aplicacion.CloseMainWindow() | Out-Null
-        if (-not $aplicacion.WaitForExit(10000)) { Stop-Process -Id $aplicacion.Id }
+        if (-not $aplicacion.WaitForExit(10000)) { throw 'La aplicación instalada no se cierra correctamente' }
+        Comprobar-Salida $aplicacion
     } finally {
         if (-not $aplicacion.HasExited) { Stop-Process -Id $aplicacion.Id -ErrorAction SilentlyContinue }
+    }
+}
+
+function Comprobar-Salida($proceso) {
+    if ($proceso.ExitCode -ne 0) {
+        Get-WinEvent -FilterHashtable @{LogName='Application'; Id=1000; StartTime=(Get-Date).AddMinutes(-5)} -ErrorAction SilentlyContinue |
+            Where-Object Message -Match 'glosala|flutter_windows' | Select-Object TimeCreated, Message | Format-List | Out-String | Write-Output
+        throw "La aplicación termina con código $($proceso.ExitCode)"
     }
 }
 
@@ -82,7 +91,8 @@ function Abrir-Portable($directorio) {
         $aplicacion.CloseMainWindow() | Out-Null
         if (-not $aplicacion.WaitForExit(10000)) { throw 'La aplicación portable no se cierra correctamente' }
         if (-not $lanzador.WaitForExit(10000)) { throw 'El lanzador portable no termina al cerrar Glosala' }
-        if ($lanzador.ExitCode -ne 0) { throw "El portable termina con código $($lanzador.ExitCode)" }
+        Comprobar-Salida $aplicacion
+        Comprobar-Salida $lanzador
         if (Test-Path $hijo.ExecutablePath) { throw 'El portable no ha limpiado los binarios temporales' }
     } finally {
         if ($hijo) { Stop-Process -Id $hijo.ProcessId -ErrorAction SilentlyContinue }
