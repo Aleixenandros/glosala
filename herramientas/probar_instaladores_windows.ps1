@@ -82,6 +82,9 @@ function Abrir-Portable($directorio) {
         }
         if (-not $hijo) { throw 'El EXE portable no ha abierto Glosala' }
         $aplicacion = Get-Process -Id $hijo.ProcessId
+        # Conservar el handle mientras vive: Get-Process no lo abre de antemano
+        # y, si el hijo sale rápidamente, ExitCode quedaría sin valor.
+        $null = $aplicacion.Handle
         Start-Sleep -Seconds 5
         $aplicacion.Refresh()
         if ($aplicacion.HasExited) { throw 'La aplicación portable se ha cerrado inesperadamente' }
